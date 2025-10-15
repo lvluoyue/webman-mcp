@@ -3,14 +3,13 @@
 use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Mcp\Schema\ServerCapabilities;
 use Mcp\Server\Session\InMemorySessionStore;
-use support\Log;
 
 return [
     'enable' => true,
     // 自动注册MCP服务到ide中
     'auto_register_client' => McpClientRegisterEnum::VSCODE_IDE,
-    // mcp系统日志实例，默认不记录日志(Psr\Log\NullLogger)
-    'logger' => Log::channel(),
+    // mcp系统日志名称，对应插件的log配置文件
+    'logger' => null,
     'services' => [
         'mcp' => [
             // 服务名称
@@ -21,8 +20,8 @@ return [
             'description' => 'MCP Server',
             // 使用说明
             'instructions' => '',
-            // 服务连接日志实例
-            'logger' => Log::channel('mcp'),
+            // 服务连接日志名称，对应插件的log配置文件
+            'logger' => 'mcp',
             // 服务注册配置
             'discover' => [
                 // 注解扫描路径

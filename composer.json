@@ -10,7 +10,8 @@
     "webman/console": "^2.1"
   },
   "require-dev": {
-    "workerman/webman-framework": "^2.1"
+    "workerman/webman-framework": "^2.1",
+    "monolog/monolog": "^3.9"
   },
   "autoload": {
     "psr-4": {

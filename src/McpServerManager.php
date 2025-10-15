@@ -8,13 +8,13 @@ use Luoyue\WebmanMcp\Enum\McpTransportEnum;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Mcp\Server\Transport\StdioTransport;
 use Mcp\Server\Transport\StreamableHttpTransport;
-use Mcp\Server\Transport\TransportInterface;
 use Mcp\Server\Session\InMemorySessionStore;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use support\Container;
+use support\Log;
 use Webman\Http\Response;
 use Workerman\Coroutine\Locker;
 
@@ -25,16 +25,27 @@ final class McpServerManager
 
     private static array $configs;
 
+    private static string $pluginPrefix = 'plugin.luoyue.webman-mcp.';
+
     private function __construct(string $serviceName)
     {
         $this->config = self::$configs['services'][$serviceName];
+        if(!$this->config['logger'] instanceof LoggerInterface) {
+            $this->config['logger'] = $this->config['logger'] ?
+                Log::channel(self::$pluginPrefix . $this->config['logger']) : Container::get(NullLogger::class);
+        }
     }
 
     public static function service(string $serviceName): static
     {
-        self::$configs ??= config('plugin.luoyue.webman-mcp.app', []);
+        self::$configs ??= config(self::$pluginPrefix . 'app', []);
         if (!isset(self::$configs['services'][$serviceName])) {
             throw new \InvalidArgumentException("Mcp server [{$serviceName}] not found.");
+        }
+
+        if(!self::$configs['logger'] instanceof LoggerInterface) {
+            self::$configs['logger'] = self::$configs['logger'] ?
+                Log::channel(self::$pluginPrefix . self::$configs['logger']) : Container::get(NullLogger::class);
         }
 
         return new McpServerManager($serviceName);
@@ -43,21 +54,21 @@ final class McpServerManager
     public function run(McpTransportEnum $type): mixed
     {
         $server = Server::builder()
-                ->setServerInfo($this->config['name'], $this->config['version'], $this->config['description'] ?? null)
-                ->setDiscovery(
-                    base_path(),
-                    $this->config['discover']['scan_dirs'],
-                    $this->config['discover']['exclude_dirs'] ?? ['vendor'],
-                    $this->config['discover']['cache'] ?? null
-                )
-                ->setContainer(Container::instance())
-                ->setPaginationLimit($this->config['pagination_limit'] ?? 50)
-                ->setInstructions($this->config['instructions'] ?? null)
-                ->setSession($this->config['session'] ??= Container::get(InMemorySessionStore::class))
-                ->setCapabilities($this->config['capabilities'] ??= Container::get(ServerCapabilities::class))
-                ->setLogger(self::$configs['logger'] ??= Container::get(NullLogger::class))
-                ->build();
-        $this->config['logger'] ??= Container::get(NullLogger::class);
+            ->setServerInfo($this->config['name'], $this->config['version'], $this->config['description'] ?? null)
+            ->setDiscovery(
+                base_path(),
+                $this->config['discover']['scan_dirs'],
+                $this->config['discover']['exclude_dirs'] ?? ['vendor'],
+                $this->config['discover']['cache'] ?? null
+            )
+            ->setContainer(Container::instance())
+            ->setPaginationLimit($this->config['pagination_limit'] ?? 50)
+            ->setInstructions($this->config['instructions'] ?? null)
+            ->setSession($this->config['session'] ??= Container::get(InMemorySessionStore::class))
+            ->setCapabilities($this->config['capabilities'] ??= Container::get(ServerCapabilities::class))
+            ->setLogger(self::$configs['logger'])
+            ->build();
+
         return match ($type) {
             McpTransportEnum::STDOUT => $this->handleStdioMessage($server),
             McpTransportEnum::STREAMABLEHTTP => $this->handleHttpRequest($server),
