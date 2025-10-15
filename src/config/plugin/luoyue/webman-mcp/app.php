@@ -1,6 +1,6 @@
 <?php
 
-use Luoyue\WebmanMcp\Enum\McpClientDirectoryEnum;
+use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Mcp\Schema\ServerCapabilities;
 use Mcp\Server\Session\InMemorySessionStore;
 use support\Log;
@@ -8,7 +8,7 @@ use support\Log;
 return [
     'enable' => true,
     // 自动注册MCP服务到ide中
-    'auto_register_client' => McpClientDirectoryEnum::VSCODE_IDE,
+    'auto_register_client' => McpClientRegisterEnum::VSCODE_IDE,
     // mcp系统日志实例，默认不记录日志(Psr\Log\NullLogger)
     'logger' => Log::channel(),
     'services' => [

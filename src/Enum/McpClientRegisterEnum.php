@@ -2,7 +2,7 @@
 
 namespace Luoyue\WebmanMcp\Enum;
 
-enum McpClientDirectoryEnum: string
+enum McpClientRegisterEnum: string
 {
     /** cursor编辑器(工作区安装) */
     case CURSOR_IDE = './.cursor/mcp.json';

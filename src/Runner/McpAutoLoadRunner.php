@@ -2,7 +2,7 @@
 
 namespace Luoyue\WebmanMcp\Runner;
 
-use Luoyue\WebmanMcp\Enum\McpClientDirectoryEnum;
+use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Webman\Bootstrap;
 use Workerman\Worker;
 
@@ -15,13 +15,13 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
 
     public static function start(?Worker $worker): void
     {
-        /** @var ?McpClientDirectoryEnum $editor */
+        /** @var ?McpClientRegisterEnum $editor */
         $editor = config('plugin.luoyue.webman-mcp.app.auto_register_client', null);
         if (PHP_OS_FAMILY !== 'Windows' || is_phar() || !$editor) {
             return;
         }
 
-        if ($editor && !$editor instanceof McpClientDirectoryEnum) {
+        if ($editor && !$editor instanceof McpClientRegisterEnum) {
             throw new \RuntimeException('editor must be instanceof McpClientDirectoryEnum');
         }
 

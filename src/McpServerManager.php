@@ -25,9 +25,7 @@ final class McpServerManager
 
     private static array $configs;
 
-    private static array $servers = [];
-
-    private function __construct(private string $serviceName)
+    private function __construct(string $serviceName)
     {
         $this->config = self::$configs['services'][$serviceName];
     }
@@ -39,7 +37,7 @@ final class McpServerManager
             throw new \InvalidArgumentException("Mcp server [{$serviceName}] not found.");
         }
 
-        return new static($serviceName);
+        return new McpServerManager($serviceName);
     }
 
     public function run(McpTransportEnum $type): mixed
@@ -74,7 +72,7 @@ final class McpServerManager
         return $response;
     }
 
-    private function handleHttpRequest(): Response
+    private function handleHttpRequest(Server $server): Response
     {
         $transport = new StreamableHttpTransport(
             $this->getRequest(),
@@ -96,17 +94,16 @@ final class McpServerManager
     {
         $psr17Factory = self::getPsrFactory();
         $headers = \request()->header();
-        $psrRequest = $psr17Factory->createServerRequest(\request()->method(), request()->uri())
+        $serverRequest = $psr17Factory->createServerRequest(\request()->method(), request()->uri())
             ->withBody($psr17Factory->createStream(\request()->rawBody()))
             ->withCookieParams((array)\request()->cookie())
             ->withQueryParams((array)\request()->get())
             ->withParsedBody((array)\request()->post());
-        $psrRequest = array_reduce(
+        return array_reduce(
             array_keys($headers),
             fn($request, $key) => $request->withHeader($key, $headers[$key]),
-            $psrRequest
+            $serverRequest
         );
-        return $psrRequest;
     }
 
 }
