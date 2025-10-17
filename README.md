@@ -7,11 +7,12 @@
 
 ## 特性
 - [x] 一键启动，安装后即可启动，同时支持配置复杂的功能。
+- [x] 一个项目支持多个MCP服务器，并按服务器名称隔离配置。
 - [x] 与Webman框架深度集成，HTTP支持路由模式和自定义进程模式。
 - [x] 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）
 - [x] 支持 STDIO、HTTP 传输
-- [x] 同步官方SDK的所有功能
-- [ ] STDIO模式下支持workerman特定功能（如Timer，http-client）
+- [x] 适配官方SDK的所有功能
+- [ ] STDIO模式下支持非阻塞IO，并支持workerman进程环境下的特定功能
 - [ ] 内置MCP开发工具
 
 ## 安装

@@ -31,7 +31,16 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
         }
         touch($lockFile);
 
-        $mcpServers = json_decode(file_get_contents($editor->getPath()), true);
+        $editorPath = $editor->getPath();
+        if (!file_exists($editorPath)) {
+            $dir = dirname($editorPath);
+            if (!mkdir($dir, 0777, true)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
+            }
+            $mcpServers = [];
+        } else {
+            $mcpServers = json_decode(file_get_contents($editorPath), true);
+        }
         foreach (config('plugin.luoyue.webman-mcp.app.services', []) as $name => $service) {
             $mcpServers[$editor->getKey()][$name] = [
                 'type' => 'stdio',
