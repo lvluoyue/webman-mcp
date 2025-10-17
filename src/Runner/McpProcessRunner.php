@@ -38,7 +38,7 @@ final class McpProcessRunner implements McpRunnerInterface
         Context::reset(new \ArrayObject([Request::class => $request]));
         try {
             if($service = self::$endpoint[$request->getLocalPort()][$request->path()] ?? null) {
-                $connection->send(McpServerManager::service($service)->run(McpTransportEnum::STREAMABLEHTTP));
+                $connection->send(McpServerManager::service($service)->run(McpTransportEnum::STREAMABLE_HTTP));
             } else {
                 $connection->send(response(json_encode([
                     'error' => 'Not Found',

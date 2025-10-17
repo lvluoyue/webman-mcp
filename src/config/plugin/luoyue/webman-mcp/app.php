@@ -7,7 +7,7 @@ use Mcp\Server\Session\InMemorySessionStore;
 return [
     'enable' => true,
     // 自动注册MCP服务到ide中
-    'auto_register_client' => McpClientRegisterEnum::VSCODE_IDE,
+    'auto_register_client' => McpClientRegisterEnum::CURSOR_IDE,
     // mcp系统日志名称，对应插件的log配置文件
     'logger' => null,
     'services' => [
@@ -51,6 +51,44 @@ return [
                 completions: false,
                 experimental: null,
             ),
+            'tool' => [
+//                [
+//                    'handler' => fn() => null,
+//                    'name' => null,
+//                    'description' => null,
+//                    'annotations' => null,
+//                    'inputSchema' => null
+//                ]
+            ],
+            'prompt' => [
+//                [
+//                    'handler' => fn() => null,
+//                    'name' => null,
+//                    'description' => null
+//                ]
+            ],
+            'resource' => [
+//                [
+//                    'handler' => fn() => null,
+//                    'uri' => '',
+//                    'name' => null,
+//                    'description' => null,
+//                    'mimeType' => null,
+//                    'size' => null,
+//                    'annotations' => null
+//                ]
+            ],
+            'resource_template' => [
+//                [
+//                    'handler' => fn() => null,
+//                    'uri' => '',
+//                    'name' => null,
+//                    'description' => null,
+//                    'mimeType' => null,
+//                    'size' => null,
+//                    'annotations' => null
+//                ]
+            ],
             // 路由配置（此配置将注入至webman进程中）
             'router' => [
                 'enable' => true,

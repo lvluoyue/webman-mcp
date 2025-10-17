@@ -67,11 +67,27 @@ final class McpServerManager
             ->setSession($this->config['session'] ??= Container::get(InMemorySessionStore::class))
             ->setCapabilities($this->config['capabilities'] ??= Container::get(ServerCapabilities::class))
             ->setLogger(self::$configs['logger'])
-            ->build();
+//            ->enableClientLogging() // pr #104
+            ->addRequestHandlers($this->config['request_handlers'] ?? [])
+            ->addNotificationHandlers($this->config['notification_handlers'] ?? []);
+        foreach ($this->config['tool'] ?? [] as $tool) {
+            $server->addTool(...$tool);
+        }
+        foreach ($this->config['prompt'] ?? [] as $prompt) {
+            $server->addPrompt(...$prompt);
+        }
+        foreach ($this->config['resource'] ?? [] as $resource) {
+            $server->addResource(...$resource);
+        }
+        foreach ($this->config['resource_template'] ?? [] as $resourceTemplate) {
+            $server->addResourceTemplate(...$resourceTemplate);
+        }
+
+        $server = $server->build();
 
         return match ($type) {
             McpTransportEnum::STDOUT => $this->handleStdioMessage($server),
-            McpTransportEnum::STREAMABLEHTTP => $this->handleHttpRequest($server),
+            McpTransportEnum::STREAMABLE_HTTP => $this->handleHttpRequest($server),
         };
     }
 

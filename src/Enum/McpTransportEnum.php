@@ -8,5 +8,5 @@ enum McpTransportEnum
     case STDOUT;
 
     /** streamableHTTP传输 */
-    case STREAMABLEHTTP;
+    case STREAMABLE_HTTP;
 }
