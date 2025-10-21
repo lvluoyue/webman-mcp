@@ -67,7 +67,6 @@ final class McpServerManager
             ->setSession($this->config['session'] ??= Container::get(InMemorySessionStore::class))
             ->setCapabilities($this->config['capabilities'] ??= Container::get(ServerCapabilities::class))
             ->setLogger(self::$configs['logger'])
-//            ->enableClientLogging() // pr #104
             ->addRequestHandlers($this->config['request_handlers'] ?? [])
             ->addNotificationHandlers($this->config['notification_handlers'] ?? []);
         foreach ($this->config['tool'] ?? [] as $tool) {
