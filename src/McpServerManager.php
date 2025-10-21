@@ -2,6 +2,7 @@
 
 namespace Luoyue\WebmanMcp;
 
+use Luoyue\WebmanMcp\Server\Session\Psr16StoreSession;
 use Mcp\Schema\ServerCapabilities;
 use Mcp\Server;
 use Luoyue\WebmanMcp\Enum\McpTransportEnum;
@@ -13,10 +14,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use support\Cache;
 use support\Container;
 use support\Log;
 use Webman\Http\Response;
-use Workerman\Coroutine\Locker;
 
 final class McpServerManager
 {
@@ -30,10 +31,19 @@ final class McpServerManager
     private function __construct(string $serviceName)
     {
         $this->config = self::$configs['services'][$serviceName];
-        if(!$this->config['logger'] instanceof LoggerInterface) {
+        if (!$this->config['logger'] instanceof LoggerInterface) {
             $this->config['logger'] = $this->config['logger'] ?
                 Log::channel(self::$pluginPrefix . $this->config['logger']) : Container::get(NullLogger::class);
         }
+
+        if (isset($this->config['discover']['cache'])) {
+            $this->config['discover']['cache'] = Cache::store($this->config['discover']['cache']);
+        }
+
+        if (!isset($this->config['session'])) {
+            throw new \InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
+        }
+
     }
 
     public static function service(string $serviceName): static
@@ -43,7 +53,7 @@ final class McpServerManager
             throw new \InvalidArgumentException("Mcp server [{$serviceName}] not found.");
         }
 
-        if(!self::$configs['logger'] instanceof LoggerInterface) {
+        if (!self::$configs['logger'] instanceof LoggerInterface) {
             self::$configs['logger'] = self::$configs['logger'] ?
                 Log::channel(self::$pluginPrefix . self::$configs['logger']) : Container::get(NullLogger::class);
         }
@@ -53,18 +63,26 @@ final class McpServerManager
 
     public function run(McpTransportEnum $type): mixed
     {
+        $sessionConfig = $this->config['session'];
+        $sessionStore = $sessionConfig['store'] === null ? Container::get(InMemorySessionStore::class) :
+            new Psr16StoreSession(
+                Cache::store($sessionConfig['store']),
+                $sessionConfig['prefix'] ?? 'mcp-',
+                $sessionConfig['ttl'] ?? 3600
+            );
+
         $server = Server::builder()
             ->setServerInfo($this->config['name'], $this->config['version'], $this->config['description'] ?? null)
             ->setDiscovery(
                 base_path(),
                 $this->config['discover']['scan_dirs'],
                 $this->config['discover']['exclude_dirs'] ?? ['vendor'],
-                $this->config['discover']['cache'] ?? null
+                $this->config['discover']['cache']
             )
             ->setContainer(Container::instance())
             ->setPaginationLimit($this->config['pagination_limit'] ?? 50)
             ->setInstructions($this->config['instructions'] ?? null)
-            ->setSession($this->config['session'] ??= Container::get(InMemorySessionStore::class))
+            ->setSession($sessionStore)
             ->setCapabilities($this->config['capabilities'] ??= Container::get(ServerCapabilities::class))
             ->setLogger(self::$configs['logger'])
             ->addRequestHandlers($this->config['request_handlers'] ?? [])

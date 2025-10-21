@@ -2,7 +2,6 @@
 
 use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Mcp\Schema\ServerCapabilities;
-use Mcp\Server\Session\InMemorySessionStore;
 
 return [
     'enable' => true,
@@ -31,13 +30,17 @@ return [
                 // 排除扫描路径
                 'exclude_dirs' => [
                 ],
-                // Psr-16缓存实例，用于缓存扫描结果，加快启动速度  Cache::store()
-                'cache' => null,
+                // cache.php中的缓存配置名称，用于缓存扫描结果，加快启动速度
+                'cache' => '',
             ],
             // 分页限制
             'pagination_limit' => 50,
-            // session设置  InMemorySessionStore内存存储  FileSessionStore文件持久存储
-            'session' => new InMemorySessionStore(3600),
+            // session设置
+            'session' => [
+                'store' => null, // 对应cache.php中的缓存配置名称, null为使用默认的内存缓存
+                'prefix' => 'mcp-',
+                'ttl' => 86400,
+            ],
             // 设置需要开启的功能
             'capabilities' => new ServerCapabilities(
                 tools: true,
