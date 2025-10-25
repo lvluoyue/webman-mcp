@@ -33,7 +33,7 @@ final class McpServerManager
         $this->config = self::$configs['services'][$serviceName];
         if (!$this->config['logger'] instanceof LoggerInterface) {
             $this->config['logger'] = $this->config['logger'] ?
-                Log::channel(self::$pluginPrefix . $this->config['logger']) : Container::get(NullLogger::class);
+                Log::channel($this->config['logger']) : Container::get(NullLogger::class);
         }
 
         if (isset($this->config['discover']['cache'])) {
@@ -54,8 +54,8 @@ final class McpServerManager
         }
 
         if (!self::$configs['logger'] instanceof LoggerInterface) {
-            self::$configs['logger'] = self::$configs['logger'] ?
-                Log::channel(self::$pluginPrefix . self::$configs['logger']) : Container::get(NullLogger::class);
+            self::$configs['logger'] = self::$configs['logger'] === null ? Container::get(NullLogger::class) :
+                Log::channel(self::$configs['logger']);
         }
 
         return new McpServerManager($serviceName);

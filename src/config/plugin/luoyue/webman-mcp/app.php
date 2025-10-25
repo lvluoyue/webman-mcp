@@ -7,8 +7,8 @@ return [
     'enable' => true,
     // 自动注册MCP服务到ide中
     'auto_register_client' => McpClientRegisterEnum::CURSOR_IDE,
-    // mcp系统日志名称，对应插件的log配置文件
-    'logger' => null,
+    // mcp系统日志名称，对应log配置文件
+    'logger' => 'default',
     'services' => [
         'mcp' => [
             // 服务名称
@@ -19,8 +19,8 @@ return [
             'description' => 'MCP Server',
             // 使用说明
             'instructions' => '',
-            // 服务连接日志名称，对应插件的log配置文件
-            'logger' => 'mcp',
+            // 服务连接日志名称，对应log配置文件
+            'logger' => 'plugin.luoyue.webman-mcp.mcp',
             // 服务注册配置
             'discover' => [
                 // 注解扫描路径
