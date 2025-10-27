@@ -2,6 +2,7 @@
 
 use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Mcp\Schema\ServerCapabilities;
+use Mcp\Server\Builder;
 
 return [
     'enable' => true,
@@ -11,14 +12,28 @@ return [
     'logger' => 'default',
     'services' => [
         'mcp' => [
-            // 服务名称
-            'name' => 'MCP Server',
-            // 服务版本
-            'version' => '0.0.1',
-            // 服务描述
-            'description' => 'MCP Server',
-            // 使用说明
-            'instructions' => '',
+            // MCP功能配置
+            'configure' => function (Builder $server) {
+                // 设置服务信息
+                $server->setServerInfo('MCP Server', '0.0.1', 'MCP Server');
+                // 设置使用说明
+                $server->setInstructions('MCP Server');
+                // 设置分页大小
+                $server->setPaginationLimit(50);
+                //设置需要开启的功能
+                $server->setCapabilities(new ServerCapabilities(
+                    tools: true,
+                    toolsListChanged: false,
+                    resources: true,
+                    resourcesSubscribe: false,
+                    resourcesListChanged: false,
+                    prompts: true,
+                    promptsListChanged: false,
+                    logging: false,
+                    completions: false,
+                    experimental: null,
+                ));
+            },
             // 服务连接日志名称，对应log配置文件
             'logger' => 'plugin.luoyue.webman-mcp.mcp',
             // 服务注册配置
@@ -33,64 +48,15 @@ return [
                 // cache.php中的缓存配置名称，用于缓存扫描结果，加快启动速度
                 'cache' => '',
             ],
-            // 分页限制
-            'pagination_limit' => 50,
             // session设置
             'session' => [
                 'store' => null, // 对应cache.php中的缓存配置名称, null为使用默认的内存缓存
                 'prefix' => 'mcp-',
                 'ttl' => 86400,
             ],
-            // 设置需要开启的功能
-            'capabilities' => new ServerCapabilities(
-                tools: true,
-                toolsListChanged: false,
-                resources: true,
-                resourcesSubscribe: false,
-                resourcesListChanged: false,
-                prompts: true,
-                promptsListChanged: false,
-                logging: false,
-                completions: false,
-                experimental: null,
-            ),
-            'tool' => [
-//                [
-//                    'handler' => fn() => null,
-//                    'name' => null,
-//                    'description' => null,
-//                    'annotations' => null,
-//                    'inputSchema' => null
-//                ]
-            ],
-            'prompt' => [
-//                [
-//                    'handler' => fn() => null,
-//                    'name' => null,
-//                    'description' => null
-//                ]
-            ],
-            'resource' => [
-//                [
-//                    'handler' => fn() => null,
-//                    'uri' => '',
-//                    'name' => null,
-//                    'description' => null,
-//                    'mimeType' => null,
-//                    'size' => null,
-//                    'annotations' => null
-//                ]
-            ],
-            'resource_template' => [
-//                [
-//                    'handler' => fn() => null,
-//                    'uri' => '',
-//                    'name' => null,
-//                    'description' => null,
-//                    'mimeType' => null,
-//                    'size' => null,
-//                    'annotations' => null
-//                ]
+            // http传输模式下的请求头
+            'headers' => [
+                
             ],
             // 路由配置（此配置将注入至webman进程中）
             'router' => [
