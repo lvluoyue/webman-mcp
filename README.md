@@ -1,5 +1,11 @@
 # webman-mcp
 
+![Packagist Version](https://img.shields.io/packagist/v/luoyue/webman-mcp)
+![Packagist License](https://img.shields.io/packagist/l/luoyue/webman-mcp)
+![Packagist Dependency Version](https://img.shields.io/packagist/dependency-v/luoyue/webman-mcp/php)
+![Packagist Downloads](https://img.shields.io/packagist/dt/luoyue/webman-mcp)
+![Packagist Stars](https://img.shields.io/packagist/stars/luoyue/webman-mcp)
+
 这是一个Webman框架与官方MCP PHP SDK深度集成的插件，并在SDK基础上进行了扩展，可快速创建MCP服务器。
 
 > [!IMPORTANT]
@@ -10,12 +16,18 @@
 - [x] 一个项目支持多个MCP服务器，并按服务器名称隔离配置。
 - [x] 与Webman框架深度集成，HTTP支持路由模式和自定义进程模式。
 - [x] 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）
-- [x] 支持 STDIO、HTTP 传输
-- [x] 适配官方SDK的所有功能
-- [ ] STDIO模式下支持非阻塞IO，并支持workerman进程环境下的特定功能
+- [x] 支持 STDIO、Streamable HTTP 高性能传输
 - [ ] 内置MCP开发工具
 
 ## 安装
+开始前请确保您已了解MCP相关知识，以便后续理解这些操作。如需了解请[点击此处查看](#参考文档)。
+
+### 环境要求
+
+- PHP >= 8.1
+- webman^2.1
+- webman/cache^2.1
+- redis（可选）
 
 ```bash
 composer require luoyue/webman-mcp
@@ -101,7 +113,7 @@ class CalculatorElements
 ### 3. 测试您的服务器
 
 ```bash
-# 使用 MCP Inspector 测试
+# 使用 MCP Inspector 测试（需要node环境）
 npx @modelcontextprotocol/inspector php webman mcp:server mcp
 
 # 您的 AI 助手现在可以调用：
@@ -109,6 +121,21 @@ npx @modelcontextprotocol/inspector php webman mcp:server mcp
 # - calculate: 执行算术运算
 # - 读取 config://calculator/settings 资源
 ```
+
+## 常见问题
+
+### STDIO和Streamable HTTP是什么，与路由模式、进程模式有什么区别
+`STDIO`和`Streamable HTTP`属于MCP中客户端与服务器的通信方式，`STDIO`通过**标准输入输出**进行通信，而`Streamable HTTP`则通过**HTTP**进行通信。  
+而`路由模式`和`进程模式`则分别对应服务端的启动方式，路由模式下，MCP服务运行在`Webman`的**路由**中，进程模式下，MCP服务运行在单独的**自定义进程**中。
+
+### 我通过Streamable HTTP开发的MCP切换到STDIO时无法调用MCP工具
+由于标准输入输出在读取时是**阻塞**的，因此无法使用`webman`中的部分功能，如您有更好的解决方案，欢迎到此处讨论：[Discussions
+#3](https://github.com/lvluoyue/webman-mcp/discussions/3)
+
+### 关于三种日志记录的区别
+1. 服务端系统日志：MCP系统中产生的日志。记录了传输协议的创建，MCP工具发现等日志。
+2. 服务端连接日志：客户端连接MCP中产生的日志，记录了客户端连接后的操作。
+3. 发送客户端日志：在服务端执行过程中服务端向客户端发送日志，使用方法参考[官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)。
 
 ## 参考文档
 
