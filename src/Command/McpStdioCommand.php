@@ -2,7 +2,6 @@
 
 namespace Luoyue\WebmanMcp\Command;
 
-use Luoyue\WebmanMcp\Enum\McpTransportEnum;
 use Luoyue\WebmanMcp\McpServerManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Argument;
@@ -14,8 +13,7 @@ final class McpStdioCommand extends Command
 {
     public function __invoke(OutputInterface $output, #[Argument('Service name')] string $service): int
     {
-        $output->writeln("Starting MCP server for service $service...");
-        McpServerManager::service($service)->run(McpTransportEnum::STDOUT);
+        McpServerManager::service($service)->run();
         return Command::SUCCESS;
     }
 }

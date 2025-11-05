@@ -2,7 +2,6 @@
 
 namespace Luoyue\WebmanMcp\Runner;
 
-use Luoyue\WebmanMcp\Enum\McpTransportEnum;
 use Luoyue\WebmanMcp\McpServerManager;
 use support\Context;
 use Workerman\Connection\TcpConnection;
@@ -38,7 +37,7 @@ final class McpProcessRunner implements McpRunnerInterface
         Context::reset(new \ArrayObject([Request::class => $request]));
         try {
             if($service = self::$endpoint[$request->getLocalPort()][$request->path()] ?? null) {
-                $connection->send(McpServerManager::service($service)->run(McpTransportEnum::STREAMABLE_HTTP));
+                $connection->send(McpServerManager::service($service)->run());
             } else {
                 $connection->send(response(json_encode([
                     'error' => 'Not Found',

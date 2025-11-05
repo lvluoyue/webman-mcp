@@ -3,7 +3,6 @@
 namespace Luoyue\WebmanMcp\Runner;
 
 use Luoyue\WebmanMcp\Command\McpStdioCommand;
-use support\Container;
 
 final class McpCommandRunner implements McpRunnerInterface
 {

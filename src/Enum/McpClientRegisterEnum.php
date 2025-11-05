@@ -16,8 +16,11 @@ enum McpClientRegisterEnum: string
     /** 通义灵码插件(全局安装) */
     case LINGMA_PLUGIN = '%USERPROFILE%/.lingma/lingma_mcp.json';
     
-    /** cline插件(全局安装) */
-    case CLINE_PLUGIN = '%APPDATA%/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json';
+    /** cline插件-vscode(全局安装) */
+    case CLINE_VSCODE_PLUGIN = '%APPDATA%/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json';
+
+    /** cline插件-cursor(全局安装) */
+    case CLINE_CURSOR_PLUGIN = '%APPDATA%/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json';
 
     public function getKey(): string
     {

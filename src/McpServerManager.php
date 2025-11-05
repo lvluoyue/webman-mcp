@@ -3,7 +3,6 @@
 namespace Luoyue\WebmanMcp;
 
 use Mcp\Server;
-use Luoyue\WebmanMcp\Enum\McpTransportEnum;
 use Mcp\Server\Session\Psr16StoreSession;
 use Mcp\Server\Transport\StdioTransport;
 use Mcp\Server\Transport\StreamableHttpTransport;
@@ -16,6 +15,7 @@ use support\Cache;
 use support\Container;
 use support\Log;
 use Webman\Http\Response;
+use Workerman\Worker;
 use function request;
 
 final class McpServerManager
@@ -52,7 +52,7 @@ final class McpServerManager
             );
     }
 
-    public static function service(string $serviceName): static
+    public static function service(string $serviceName): McpServerManager
     {
         self::$configs ??= config(self::$pluginPrefix . 'app', []);
         if (!isset(self::$configs['services'][$serviceName])) {
@@ -67,7 +67,7 @@ final class McpServerManager
         return new McpServerManager($serviceName);
     }
 
-    public function run(McpTransportEnum $type): mixed
+    public function run(): mixed
     {
         $server = Server::builder()
             ->setDiscovery(
@@ -86,10 +86,7 @@ final class McpServerManager
 
         $server = $server->build();
 
-        return match ($type) {
-            McpTransportEnum::STDOUT => $this->handleStdioMessage($server),
-            McpTransportEnum::STREAMABLE_HTTP => $this->handleHttpRequest($server),
-        };
+        return Worker::getAllWorkers() ? $this->handleHttpRequest($server) : $this->handleStdioMessage($server);
     }
 
     private function handleStdioMessage(Server $server)

@@ -46,7 +46,7 @@ return [
                 'exclude_dirs' => [
                 ],
                 // cache.php中的缓存配置名称，用于缓存扫描结果，加快启动速度
-                'cache' => '',
+                'cache' => null,
             ],
             // session设置
             'session' => [
@@ -61,7 +61,7 @@ return [
             // 路由配置（此配置将注入至webman进程中）
             'router' => [
                 'enable' => true,
-                'endpoint' => '/mcp',
+                'endpoint' => '/mcp', // 路由地址，与process共享此配置
             ],
             // 额外自定义进程配置（与process.php配置相同）使用port代替listen
             'process' => [
