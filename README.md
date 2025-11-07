@@ -129,8 +129,7 @@ npx @modelcontextprotocol/inspector php webman mcp:server mcp
 而`路由模式`和`进程模式`则分别对应服务端的启动方式，路由模式下，MCP服务运行在`Webman`的**路由**中，进程模式下，MCP服务运行在单独的**自定义进程**中。
 
 ### 我通过Streamable HTTP开发的MCP切换到STDIO时无法调用MCP工具
-由于标准输入输出在读取时是**阻塞**的，因此无法使用`webman`中的部分功能，如您有更好的解决方案，欢迎到此处讨论：[Discussions
-#3](https://github.com/lvluoyue/webman-mcp/discussions/3)
+由于标准输入输出在读取时是**阻塞**的，因此无法使用`webman`中的部分功能，如您有更好的解决方案，欢迎到此处讨论：[Discussions #3](https://github.com/lvluoyue/webman-mcp/discussions/3)
 
 ### 关于三种日志记录的区别
 1. 服务端系统日志：MCP系统中产生的日志。记录了传输协议的创建，MCP工具发现等日志。

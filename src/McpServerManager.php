@@ -4,6 +4,7 @@ namespace Luoyue\WebmanMcp;
 
 use Mcp\Server;
 use Mcp\Server\Session\Psr16StoreSession;
+use Mcp\Server\Transport\CallbackStream;
 use Mcp\Server\Transport\StdioTransport;
 use Mcp\Server\Transport\StreamableHttpTransport;
 use Mcp\Server\Session\InMemorySessionStore;
@@ -15,6 +16,7 @@ use support\Cache;
 use support\Container;
 use support\Log;
 use Webman\Http\Response;
+use Workerman\Connection\TcpConnection;
 use Workerman\Worker;
 use function request;
 
@@ -99,13 +101,20 @@ final class McpServerManager
 
     private function handleHttpRequest(Server $server): Response
     {
-        $transport = new StreamableHttpTransport(
-            request: new ServerRequest(request()->method(), request()->uri(), request()->header(), request()->rawBody()),
-            corsHeaders: $this->config['headers'] ?? [],
-            logger: $this->config['logger']);
+        $request = new ServerRequest(
+            request()->method(),
+            request()->uri(),
+            request()->header(),
+            request()->rawBody(),
+            request()->protocolVersion(),
+            $_SERVER
+        );
+        $request = $request->withAttribute(TcpConnection::class, request()->connection);
+        $transport = new StreamableHttpTransport(request: $request, corsHeaders: $this->config['headers'] ?? [], logger: $this->config['logger']);
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
-        return response($response->getBody()->getContents(), $response->getStatusCode(), $response->getHeaders());
+        $body = $response->getBody() instanceof CallbackStream ? "\r\n" : $response->getBody()->getContents();
+        return response($body, $response->getStatusCode(), array_map('current', $response->getHeaders()));
     }
 
 }
