@@ -49,6 +49,8 @@ final class McpProcessRunner implements McpRunnerInterface
                 'error' => 'Server Error',
                 'message' => $e->getMessage(),
             ]), 500));
+        } finally {
+            Context::destroy();
         }
     }
 }
