@@ -3,6 +3,7 @@
 namespace Luoyue\WebmanMcp\Runner;
 
 use Luoyue\WebmanMcp\McpServerManager;
+use support\Container;
 use support\Context;
 use Workerman\Connection\TcpConnection;
 use Webman\Http\Request;
@@ -14,8 +15,10 @@ final class McpProcessRunner implements McpRunnerInterface
     public static function create(): array
     {
         $process = [];
-        foreach (config('plugin.luoyue.webman-mcp.app.services', []) as $name => $service) {
-            $processConfig = $service['process'] ?? [];
+        $mcpServerManager = new McpServerManager();
+        foreach ($mcpServerManager->getServiceNames() as $name) {
+            $config = $mcpServerManager->getServiceConfig($name);
+            $processConfig = $config['process'] ?? [];
             if($processConfig['enable'] ?? false) {
                 $process[$name] = array_merge($processConfig, [
                     'handler' => static::class,
@@ -35,9 +38,11 @@ final class McpProcessRunner implements McpRunnerInterface
     public function onMessage(TcpConnection $connection, Request $request): void
     {
         Context::reset(new \ArrayObject([Request::class => $request]));
+        /** @var McpServerManager $mcpServerManager */
+        $mcpServerManager = Container::get(McpServerManager::class);
         try {
             if($service = self::$endpoint[$request->getLocalPort()][$request->path()] ?? null) {
-                $connection->send(McpServerManager::service($service)->run());
+                $connection->send($mcpServerManager->start($service));
             } else {
                 $connection->send(response(json_encode([
                     'error' => 'Not Found',

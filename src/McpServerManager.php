@@ -18,89 +18,104 @@ use support\Log;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
 use Workerman\Worker;
+use Generator;
 use function request;
 
 final class McpServerManager
 {
+    public static bool $isInit = false;
 
-    private array $config;
-
-    private static array $configs;
+    private static array $config;
 
     private static string $pluginPrefix = 'plugin.luoyue.webman-mcp.';
 
-    private function __construct(string $serviceName)
+    public function __construct()
     {
-        $this->config = self::$configs['services'][$serviceName];
-        if (!$this->config['logger'] instanceof LoggerInterface) {
-            $this->config['logger'] = $this->config['logger'] ?
-                Log::channel($this->config['logger']) : Container::get(NullLogger::class);
-        }
-
-        if (isset($this->config['discover']['cache'])) {
-            $this->config['discover']['cache'] = Cache::store($this->config['discover']['cache']);
-        }
-
-        if (!isset($this->config['session'])) {
-            throw new \InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
-        }
-
-        $sessionConfig = $this->config['session'];
-        $this->config['session'] = $sessionConfig['store'] === null ? Container::get(InMemorySessionStore::class) :
-            new Psr16StoreSession(
-                Cache::store($sessionConfig['store']),
-                $sessionConfig['prefix'] ?? 'mcp-',
-                $sessionConfig['ttl'] ?? 3600
-            );
+        self::$config = config(self::$pluginPrefix . 'mcp', []);
     }
 
-    public static function service(string $serviceName): McpServerManager
+    public static function loadConfig(): void
     {
-        self::$configs ??= config(self::$pluginPrefix . 'app', []);
-        if (!isset(self::$configs['services'][$serviceName])) {
+        array_walk(self::$config, function (&$config, $serviceName) {
+            if (!$config['logger'] instanceof LoggerInterface) {
+                $config['logger'] = $config['logger'] ?
+                    Log::channel(self::$pluginPrefix . $config['logger']) : Container::get(NullLogger::class);
+            }
+
+            if (isset($config['discover']['cache'])) {
+                $config['discover']['cache'] = Cache::store($config['discover']['cache']);
+            }
+            $config['discover']['exclude_dirs'] ??= ['vendor'];
+
+            if (!isset($config['session'])) {
+                throw new \InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
+            }
+
+            $sessionConfig = $config['session'];
+            $config['session'] = $sessionConfig['store'] === null ? Container::get(InMemorySessionStore::class) :
+                new Psr16StoreSession(
+                    Cache::store($sessionConfig['store']),
+                    $sessionConfig['prefix'] ?? 'mcp-',
+                    $sessionConfig['ttl'] ?? 3600
+                );
+        });
+    }
+
+    /**
+     * @return Generator<String>
+     */
+    public function getServiceNames(): Generator
+    {
+        yield from array_keys(self::$config);
+    }
+
+    public function getServiceConfig(string $serviceName): array
+    {
+        $config = self::$config[$serviceName] ?? null;
+        if (!$config) {
             throw new \InvalidArgumentException("Mcp server [{$serviceName}] not found.");
         }
-
-        if (!self::$configs['logger'] instanceof LoggerInterface) {
-            self::$configs['logger'] = self::$configs['logger'] === null ? Container::get(NullLogger::class) :
-                Log::channel(self::$configs['logger']);
-        }
-
-        return new McpServerManager($serviceName);
+        return $config;
     }
 
-    public function run(): mixed
+    public function start(string $serviceName): mixed
     {
-        $server = Server::builder()
-            ->setDiscovery(
-                base_path(),
-                $this->config['discover']['scan_dirs'],
-                $this->config['discover']['exclude_dirs'] ?? ['vendor'],
-                $this->config['discover']['cache']
-            )
-            ->setContainer(Container::instance())
-            ->setSession($this->config['session'])
-            ->setLogger(self::$configs['logger']);
+        if (!self::$isInit) {
+            self::loadConfig();
+            self::$isInit = true;
+        }
 
-        if (isset($this->config['configure']) && is_callable($this->config['configure'])) {
-            ($this->config['configure'])($server);
+        $config = $this->getServiceConfig($serviceName);
+        $discover = $config['discover'];
+
+        $server = Server::builder()
+            ->setDiscovery(base_path(), $discover['scan_dirs'], $discover['exclude_dirs'], $discover['cache'])
+            ->setContainer(Container::instance())
+            ->setSession($config['session'])
+            ->setLogger($config['logger']);
+        if (isset($config['configure']) && is_callable($config['configure'])) {
+            ($config['configure'])($server);
         }
 
         $server = $server->build();
 
-        return Worker::getAllWorkers() ? $this->handleHttpRequest($server) : $this->handleStdioMessage($server);
+        return Worker::getAllWorkers() ? $this->handleHttpRequest($server, $serviceName) : $this->handleStdioMessage($server, $serviceName);
     }
 
-    private function handleStdioMessage(Server $server)
+    private function handleStdioMessage(Server $server, string $serviceName)
     {
-        $transport = new StdioTransport(logger: $this->config['logger']);
+        $config = $this->getServiceConfig($serviceName);
+
+        $transport = new StdioTransport(logger: $config['logger']);
         $response = $server->run($transport);
 
         return $response;
     }
 
-    private function handleHttpRequest(Server $server): Response
+    private function handleHttpRequest(Server $server, string $serviceName): Response
     {
+        $config = $this->getServiceConfig($serviceName);
+
         $request = new ServerRequest(
             request()->method(),
             request()->uri(),
@@ -110,9 +125,11 @@ final class McpServerManager
             $_SERVER
         );
         $request = $request->withAttribute(TcpConnection::class, request()->connection);
-        $transport = new StreamableHttpTransport(request: $request, corsHeaders: $this->config['headers'] ?? [], logger: $this->config['logger']);
+
+        $transport = new StreamableHttpTransport(request: $request, corsHeaders: $config['headers'] ?? [], logger: $config['logger']);
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
+
         $body = $response->getBody() instanceof CallbackStream ? "\r\n" : $response->getBody()->getContents();
         return response($body, $response->getStatusCode(), array_map('current', $response->getHeaders()));
     }

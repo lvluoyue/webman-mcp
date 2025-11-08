@@ -3,6 +3,7 @@
 namespace Luoyue\WebmanMcp\Command;
 
 use Luoyue\WebmanMcp\McpServerManager;
+use support\Container;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Command\Command;
@@ -12,7 +13,9 @@ final class McpStdioCommand extends Command
 {
     public function __invoke(#[Argument('Service name')] string $service): int
     {
-        McpServerManager::service($service)->run();
+        /** @var McpServerManager $mcpServerManager */
+        $mcpServerManager = Container::get(McpServerManager::class);
+        $mcpServerManager->start($service);
         return Command::SUCCESS;
     }
 }

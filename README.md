@@ -131,10 +131,9 @@ npx @modelcontextprotocol/inspector php webman mcp:server mcp
 ### 我通过Streamable HTTP开发的MCP切换到STDIO时无法调用MCP工具
 由于标准输入输出在读取时是**阻塞**的，因此无法使用`webman`中的部分功能，如您有更好的解决方案，欢迎到此处讨论：[Discussions #3](https://github.com/lvluoyue/webman-mcp/discussions/3)
 
-### 关于三种日志记录的区别
-1. 服务端系统日志：MCP系统中产生的日志。记录了传输协议的创建，MCP工具发现等日志。
-2. 服务端连接日志：客户端连接MCP中产生的日志，记录了客户端连接后的操作。
-3. 发送客户端日志：在服务端执行过程中服务端向客户端发送日志，使用方法参考[官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)。
+### 关于两种日志记录的区别
+1. 服务端日志：MCP执行过程种产生的日志。记录了错误信息及调试信息。生产环境可设置为`error`级别。
+3. 客户端日志：在服务端执行过程中服务端向客户端发送日志，使用方法参考[官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)。
 
 ## 参考文档
 
