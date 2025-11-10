@@ -126,14 +126,14 @@ npx @modelcontextprotocol/inspector php webman mcp:server mcp
 
 ### STDIO和Streamable HTTP是什么，与路由模式、进程模式有什么区别
 `STDIO`和`Streamable HTTP`属于MCP中客户端与服务器的通信方式，`STDIO`通过**标准输入输出**进行通信，而`Streamable HTTP`则通过**HTTP**进行通信。  
-而`路由模式`和`进程模式`则分别对应服务端的启动方式，路由模式下，MCP服务运行在`Webman`的**路由**中，进程模式下，MCP服务运行在单独的**自定义进程**中。
+`路由模式`和`进程模式`则分别对应服务端的启动方式，路由模式下，MCP服务运行在`Webman`的**路由**中，进程模式下，MCP服务运行在单独的**自定义进程**中。
 
 ### 我通过Streamable HTTP开发的MCP切换到STDIO时无法调用MCP工具
 由于标准输入输出在读取时是**阻塞**的，因此无法使用`webman`中的部分功能，如您有更好的解决方案，欢迎到此处讨论：[Discussions #3](https://github.com/lvluoyue/webman-mcp/discussions/3)
 
 ### 关于两种日志记录的区别
 1. 服务端日志：MCP执行过程种产生的日志。记录了错误信息及调试信息。生产环境可设置为`error`级别。
-3. 客户端日志：在服务端执行过程中服务端向客户端发送日志，使用方法参考[官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)。
+2客户端日志：在服务端执行过程中服务端向客户端发送日志，使用方法参考[官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)。
 
 ## 参考文档
 
