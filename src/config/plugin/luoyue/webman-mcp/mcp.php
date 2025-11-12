@@ -46,7 +46,7 @@ return [
         ],
         // session设置
         'session' => [
-            'store' => null, // 对应cache.php中的缓存配置名称, null为使用默认的内存缓存
+            'store' => '', // 对应cache.php中的缓存配置名称, null为使用默认的内存缓存（不推荐）
             'prefix' => 'mcp-',
             'ttl' => 86400,
         ],

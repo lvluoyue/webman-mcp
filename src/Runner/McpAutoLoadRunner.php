@@ -3,6 +3,8 @@
 namespace Luoyue\WebmanMcp\Runner;
 
 use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
+use Luoyue\WebmanMcp\McpServerManager;
+use support\Container;
 use Webman\Bootstrap;
 use Workerman\Worker;
 
@@ -33,15 +35,14 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
 
         $editorPath = $editor->getPath();
         if (!file_exists($editorPath)) {
-            $dir = dirname($editorPath);
-            if (!mkdir($dir, 0777, true)) {
-                throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
-            }
+            @mkdir(dirname($editorPath));
             $mcpServers = [];
         } else {
             $mcpServers = json_decode(file_get_contents($editorPath), true);
         }
-        foreach (config('plugin.luoyue.webman-mcp.app.services', []) as $name => $service) {
+        /** @var McpServerManager $mcpServerManager */
+        $mcpServerManager = Container::get(McpServerManager::class);
+        foreach ($mcpServerManager->getServiceNames() as $name) {
             $mcpServers[$editor->getKey()][$name] = [
                 'type' => 'stdio',
                 'command' => 'php',

@@ -28,6 +28,7 @@
 - webman^2.1
 - webman/cache^2.1
 - redis（可选）
+- Swoole/Swow/Fiber协程（可选，提升SSE性能）
 
 ```bash
 composer require luoyue/webman-mcp

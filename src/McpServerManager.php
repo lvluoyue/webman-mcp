@@ -19,6 +19,7 @@ use support\Log;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine;
+use Workerman\Timer;
 use Workerman\Worker;
 use Generator;
 use function request;
@@ -138,7 +139,8 @@ final class McpServerManager
     private function getResponseBody(StreamInterface $body): string
     {
         if($body instanceof CallbackStream) {
-            Coroutine::defer($body->getContents(...));
+            $callback = $body->getContents(...);
+            Coroutine::isCoroutine() ? Coroutine::defer($callback) : Timer::delay(0.000001, $callback);
             return "\r\n";
         }
         return $body->getContents();
