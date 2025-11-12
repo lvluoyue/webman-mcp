@@ -6,10 +6,11 @@ use Mcp\Server;
 use Mcp\Server\Session\Psr16StoreSession;
 use Mcp\Server\Transport\CallbackStream;
 use Mcp\Server\Transport\StdioTransport;
-use Mcp\Server\Transport\StreamableHttpTransport;
+use Luoyue\WebmanMcp\Server\StreamableHttpTransport;
 use Mcp\Server\Session\InMemorySessionStore;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use support\Cache;
@@ -17,6 +18,7 @@ use support\Container;
 use support\Log;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
+use Workerman\Coroutine;
 use Workerman\Worker;
 use Generator;
 use function request;
@@ -130,8 +132,16 @@ final class McpServerManager
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
 
-        $body = $response->getBody() instanceof CallbackStream ? "\r\n" : $response->getBody()->getContents();
-        return response($body, $response->getStatusCode(), array_map('current', $response->getHeaders()));
+        return response($this->getResponseBody($response->getBody()), $response->getStatusCode(), array_map('current', $response->getHeaders()));
+    }
+
+    private function getResponseBody(StreamInterface $body): string
+    {
+        if($body instanceof CallbackStream) {
+            Coroutine::defer($body->getContents(...));
+            return "\r\n";
+        }
+        return $body->getContents();
     }
 
 }
