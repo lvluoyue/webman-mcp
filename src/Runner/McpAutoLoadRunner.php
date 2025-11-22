@@ -5,6 +5,7 @@ namespace Luoyue\WebmanMcp\Runner;
 use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Luoyue\WebmanMcp\McpServerManager;
 use support\Container;
+use Webman\App;
 use Webman\Bootstrap;
 use Workerman\Worker;
 
@@ -17,6 +18,10 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
 
     public static function start(?Worker $worker): void
     {
+        if (!$worker || $worker->getSocketName() != self::findMainProcess()) {
+            return;
+        }
+
         /** @var ?McpClientRegisterEnum $editor */
         $editor = config('plugin.luoyue.webman-mcp.app.auto_register_client', null);
         if (PHP_OS_FAMILY !== 'Windows' || is_phar() || !$editor) {
@@ -43,12 +48,42 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
         /** @var McpServerManager $mcpServerManager */
         $mcpServerManager = Container::get(McpServerManager::class);
         foreach ($mcpServerManager->getServiceNames() as $name) {
-            $mcpServers[$editor->getKey()][$name] = [
-                'type' => 'stdio',
-                'command' => 'php',
-                'args' => [base_path('webman'), 'mcp:server', $name]
-            ];
+            $config = $mcpServerManager->getServiceConfig($name);
+            $routerConfig = $config['router'] ?? [];
+            $processConfig = $config['process'] ?? [];
+            if ($routerConfig['enable'] ?? false) {
+                $mcpServers[$editor->getKey()][$name] = [
+                    'type' => 'streamableHttp',
+                    'url' => self::parseProcessUrl($worker->getSocketName()) . $routerConfig['endpoint']
+                ];
+            } else if ($processConfig['enable'] ?? false) {
+                $mcpServers[$editor->getKey()][$name] = [
+                    'type' => 'streamableHttp',
+                    'url' => self::parseProcessUrl(McpProcessRunner::getSocketName($processConfig['port'])) . $routerConfig['endpoint']
+                ];
+            } else {
+                $mcpServers[$editor->getKey()][$name] = [
+                    'type' => 'stdio',
+                    'command' => 'php',
+                    'args' => [base_path('webman'), 'mcp:server', $name]
+                ];
+            }
         }
         file_put_contents($editor->getPath(), json_encode($mcpServers, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    private static function findMainProcess(): ?string
+    {
+        foreach (config('process', []) as $process) {
+            if (is_a($process['handler'], App::class, true)) {
+                return $process['listen'];
+            }
+        }
+        return null;
+    }
+
+    private static function parseProcessUrl(string $socketName): string
+    {
+        return str_replace('0.0.0.0:', '127.0.0.1:', $socketName);
     }
 }
