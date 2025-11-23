@@ -21,8 +21,8 @@ final class McpProcessRunner implements McpRunnerInterface
             $processConfig = $config['process'] ?? [];
             if($processConfig['enable'] ?? false) {
                 $process[$name] = array_merge($processConfig, [
-                    'handler' => static::class,
-                    'listen' => 'http://0.0.0.0:' . $processConfig['port'],
+                    'handler' => McpProcessRunner::class,
+                    'listen' => self::getSocketName($processConfig['port']),
                     'constructor' => [
                         'requestClass'  => Request::class,
                     ]
@@ -33,6 +33,11 @@ final class McpProcessRunner implements McpRunnerInterface
             }
         }
         return $process;
+    }
+
+    public static function getSocketName(int $port): string
+    {
+        return 'http://0.0.0.0:' . $port;
     }
 
     public function onMessage(TcpConnection $connection, Request $request): void
