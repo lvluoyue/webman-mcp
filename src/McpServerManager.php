@@ -2,12 +2,15 @@
 
 namespace Luoyue\WebmanMcp;
 
+use Generator;
+use InvalidArgumentException;
+use Luoyue\WebmanMcp\Server\ReferenceHandler;
+use Luoyue\WebmanMcp\Server\StreamableHttpTransport;
 use Mcp\Server;
+use Mcp\Server\Session\InMemorySessionStore;
 use Mcp\Server\Session\Psr16StoreSession;
 use Mcp\Server\Transport\CallbackStream;
 use Mcp\Server\Transport\StdioTransport;
-use Luoyue\WebmanMcp\Server\StreamableHttpTransport;
-use Mcp\Server\Session\InMemorySessionStore;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -15,22 +18,22 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use support\Cache;
 use support\Container;
+use support\Context;
 use support\Log;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine;
 use Workerman\Timer;
 use Workerman\Worker;
-use Generator;
 use function request;
 
 final class McpServerManager
 {
     public static bool $isInit = false;
 
-    private static array $config;
-
     private static string $pluginPrefix = 'plugin.luoyue.webman-mcp.';
+
+    private static array $config;
 
     public function __construct()
     {
@@ -51,7 +54,7 @@ final class McpServerManager
             $config['discover']['exclude_dirs'] ??= ['vendor'];
 
             if (!isset($config['session'])) {
-                throw new \InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
+                throw new InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
             }
 
             $sessionConfig = $config['session'];
@@ -76,7 +79,7 @@ final class McpServerManager
     {
         $config = self::$config[$serviceName] ?? null;
         if (!$config) {
-            throw new \InvalidArgumentException("Mcp server [{$serviceName}] not found.");
+            throw new InvalidArgumentException("Mcp server [{$serviceName}] not found.");
         }
         return $config;
     }
@@ -94,6 +97,7 @@ final class McpServerManager
         $server = Server::builder()
             ->setDiscovery(base_path(), $discover['scan_dirs'], $discover['exclude_dirs'], $discover['cache'])
             ->setContainer(Container::instance())
+            ->setReferenceHandler(new ReferenceHandler(Container::instance()))
             ->setSession($config['session'])
             ->setLogger($config['logger']);
         if (isset($config['configure']) && is_callable($config['configure'])) {
@@ -108,6 +112,7 @@ final class McpServerManager
     private function handleStdioMessage(Server $server, string $serviceName)
     {
         $config = $this->getServiceConfig($serviceName);
+        Context::set('McpServerRequest', true);
 
         $transport = new StdioTransport(logger: $config['logger']);
         $response = $server->run($transport);
@@ -128,6 +133,7 @@ final class McpServerManager
             $_SERVER
         );
         $request = $request->withAttribute(TcpConnection::class, request()->connection);
+        Context::set('McpServerRequest', true);
 
         $transport = new StreamableHttpTransport(request: $request, corsHeaders: $config['headers'] ?? [], logger: $config['logger']);
         /** @var ResponseInterface $response */
@@ -138,8 +144,12 @@ final class McpServerManager
 
     private function getResponseBody(StreamInterface $body): string
     {
-        if($body instanceof CallbackStream) {
-            $callback = $body->getContents(...);
+        if ($body instanceof CallbackStream) {
+            $context = clone Context::get();
+            $callback = function () use ($body, $context) {
+                Context::reset($context);
+                return $body->getContents();
+            };
             Coroutine::isCoroutine() ? Coroutine::defer($callback) : Timer::delay(0.000001, $callback);
             return "\r\n";
         }
