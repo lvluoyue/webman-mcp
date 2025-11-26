@@ -26,7 +26,7 @@ return [
                 prompts: true,
                 promptsListChanged: false,
                 logging: false,
-                completions: false,
+                completions: true,
                 experimental: null,
             ));
         },
