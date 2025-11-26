@@ -30,11 +30,11 @@ final class McpServerManager
 
     private static array $config;
 
-    private static string $pluginPrefix = 'plugin.luoyue.webman-mcp.';
+    public const PLUGIN_REWFIX = 'plugin.luoyue.webman-mcp.';
 
     public function __construct()
     {
-        self::$config = config(self::$pluginPrefix . 'mcp', []);
+        self::$config = config(self::PLUGIN_REWFIX . 'mcp', []);
     }
 
     public static function loadConfig(): void
@@ -42,7 +42,7 @@ final class McpServerManager
         array_walk(self::$config, function (&$config, $serviceName) {
             if (!$config['logger'] instanceof LoggerInterface) {
                 $config['logger'] = $config['logger'] ?
-                    Log::channel(self::$pluginPrefix . $config['logger']) : Container::get(NullLogger::class);
+                    Log::channel(self::PLUGIN_REWFIX . $config['logger']) : Container::get(NullLogger::class);
             }
 
             if (isset($config['discover']['cache'])) {
