@@ -8,21 +8,18 @@
 
 这是一个Webman框架与官方MCP PHP SDK深度集成的插件，并在SDK基础上进行了扩展，可快速创建MCP服务器。
 
-> [!IMPORTANT]
-> 此插件依赖于官方的[MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk)，并且在官方SDK发布第一个正式版本之前，此插件将始终标记为实验版本。
+> 此插件依赖于官方的[MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk)，我们正在努力完善与SDK的兼容性。
 
 ## 特性
 
-- [x] 一键启动，安装后即可启动，同时支持配置复杂的功能。
-- [x] 一个项目支持多个MCP服务器，并按服务器名称隔离配置。
-- [x] 与Webman框架深度集成，HTTP支持路由模式和自定义进程模式。
-- [x] 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）
-- [x] 支持 STDIO、Streamable HTTP 高性能传输
-- [ ] 内置MCP开发工具
+- 一键启动，安装后即可启动，同时支持配置复杂的功能。
+- 一个项目支持多个MCP服务器，并按服务器名称隔离配置。
+- 与Webman框架深度集成，HTTP支持路由模式和自定义进程模式。
+- 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）
+- 支持 STDIO、Streamable HTTP 高性能传输
+- 内置MCP命令行开发工具
 
 ## 安装
-
-开始前请确保您已了解MCP相关知识，以便后续理解这些操作。如需了解请[点击此处查看](#参考文档)。
 
 ### 环境要求
 
@@ -48,88 +45,49 @@ php webman start
 
 ## 快速开始
 
-### 1. 创建一个具有 MCP 功能的类
+### 1. 使用命令行工具创建模板代码
+
+```bash
+# 创建文件后可根据模板代码实现逻辑
+php webman mcp:make template
+```
+
+### 2. 配置客户端连接配置
+
+打开app.php，修改`auto_register_client`配置为您常用的客户端。
 
 ```php
 <?php
 
-namespace App\mcp;
+use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Capability\Attribute\McpResource;
-
-class CalculatorElements
-{
-    /**
-     * 将两个数字相加。
-     * 
-     * @param int $a 第一个数字
-     * @param int $b 第二个数字
-     * @return int 两个数字的和
-     */
-    #[McpTool]
-    public function add(int $a, int $b): int
-    {
-        return $a + $b;
-    }
-
-    /**
-     * 执行基本算术运算。
-     */
-    #[McpTool(name: 'calculate')]
-    public function calculate(float $a, float $b, string $operation): float|string
-    {
-        return match($operation) {
-            'add' => $a + $b,
-            'subtract' => $a - $b,
-            'multiply' => $a * $b,
-            'divide' => $b != 0 ? $a / $b : '错误：除零',
-            default => '错误：未知操作'
-        };
-    }
-
-    #[McpResource(
-        uri: 'config://calculator/settings',
-        name: 'calculator_config',
-        mimeType: 'application/json'
-    )]
-    public function getSettings(): array
-    {
-        return ['precision' => 2, 'allow_negative' => true];
-    }
-}
+return [
+    'enable' => true,
+    // 自动注册MCP服务到ide中
+    'auto_register_client' => McpClientRegisterEnum::CURSOR_IDE,
+];
 ```
 
-### 2. 手动配置 MCP 客户端
-
-自动配置可直接跳过此步骤。
-
-```json
-{
-  "mcpServers": {
-    "php-calculator": {
-      "command": "php",
-      "args": [
-        "webman",
-        "mcp:server",
-        "mcp"
-      ]
-    }
-  }
-}
-```
+什么？没有您的客户端？我们非常欢迎您提交相关PR。
 
 ### 3. 测试您的服务器
 
 ```bash
-# 使用 MCP Inspector 测试（需要node环境）
-npx @modelcontextprotocol/inspector php webman mcp:server mcp
-
-# 您的 AI 助手现在可以调用：
-# - add: 将两个整数相加
-# - calculate: 执行算术运算
-# - 读取 config://calculator/settings 资源
+# 使用 MCP Inspector 测试（需要node与npx）
+php webman mcp:inspector mcp
 ```
+
+## 如何正确记录错误日志
+
+根据`2025-11-25`规范，STDIO传输允许将任何日志记录到stderr中，stdout必须用于传输json-rpc消息。
+
+从以下表格中看出，在开发时可以将日志记录到stderr是非常可行的，在生产环境中适合使用file记录错误日志。
+
+|  日志模式  | STDIO传输 | Streamable HTTP传输 |
+|:------:|:-------:|:-----------------:|
+|  file  |    ✅    |         ✅         |
+| stdout |    ❌    |         ✅         |
+| stderr |    ✅    |         ✅         |
 
 ## 内置命令行工具
 
@@ -137,7 +95,7 @@ npx @modelcontextprotocol/inspector php webman mcp:server mcp
 |:--------------|:-------:|:-------------------:|
 | mcp:server    | service |      启动MCP服务器       |
 | mcp:list      |         |       MCP服务列表       |
-| mcp:make      |  type   |    生成MCP配置或示例代码     |
+| mcp:make      |  type   |    生成MCP配置或模板代码     |
 | mcp:inspector | service | 启动MCP Inspector调试工具 |
 
 ## 常见问题
@@ -170,8 +128,8 @@ npx @modelcontextprotocol/inspector php webman mcp:server mcp
 **外部资源：**
 
 - [模型上下文协议文档](https://modelcontextprotocol.io)
-- [模型上下文协议规范](https://spec.modelcontextprotocol.io)
-- [官方支持的服务器](https://github.com/modelcontextprotocol/servers)
+- [模型上下文协议规范](https://modelcontextprotocol.io/specification/2025-11-25)
+- [MCP服务器列表](https://github.com/modelcontextprotocol/servers)
 - [MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk)
 
 ## 许可证

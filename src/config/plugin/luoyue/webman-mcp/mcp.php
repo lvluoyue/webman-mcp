@@ -31,7 +31,7 @@ return [
             ));
         },
         // 服务日志，对应插件下的log配置文件
-        'logger' => 'mcp',
+        'logger' => 'mcp_error_stderr',
         // 服务注册配置
         'discover' => [
             // 注解扫描路径
