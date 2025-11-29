@@ -8,7 +8,7 @@ return [
                 'constructor' => [
                     runtime_path() . '/logs/mcp.log',
                     7, //$maxFiles
-                    Monolog\Logger::DEBUG,
+                    Monolog\Logger::NOTICE,
                 ],
                 'formatter' => [
                     'class' => Monolog\Formatter\LineFormatter::class,
@@ -22,7 +22,7 @@ return [
             [
                 'class' => Monolog\Handler\StreamHandler::class,
                 'constructor' => [
-                    'php://stderr',
+                    STDERR,
                     Monolog\Logger::NOTICE,
                 ],
                 'formatter' => [

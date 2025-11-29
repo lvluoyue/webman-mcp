@@ -16,23 +16,25 @@ final class McpListCommand extends Command
     public function __invoke(OutputInterface $output): int
     {
         $table = new Table($output);
-        $table->setHeaders(['service', 'process', 'port', 'route', 'endpoint', 'discover_cache', 'discover_dirs', 'session_store', 'ttl', 'logger']);
+        $table->setHeaders(['service', 'stdio', 'process_port', 'route', 'endpoint', 'discover_cache', 'discover_dirs', 'session_store', 'ttl', 'logger']);
         $table->setHeaderTitle('mcp service list');
 
         /** @var McpServerManager $mcpServerManager */
         $mcpServerManager = Container::get(McpServerManager::class);
         foreach ($mcpServerManager->getServiceNames() as $name) {
             $config = $mcpServerManager->getServiceConfig($name);
-            $process = $config['process'];
-            $router = $config['router'];
             $discover = $config['discover'];
             $session = $config['session'];
+            $transport = $config['transport'];
+            $httpConfig = $transport['streamable_http'];
+            $process = $httpConfig['process'];
+            $router = $httpConfig['router'];
             $table->addRow([
                 $name,
-                $process['enable'] ? 'yes' : 'no',
-                $process['port'] ?? '(null)',
+                $transport['stdio']['enable'] ? 'yes' : 'no',
+                $process['enable'] ? $process['port'] ?? '(null)' : '(null)',
                 $router['enable'] ? 'yes' : 'no',
-                $router['endpoint'] ?? '(null)',
+                $httpConfig['endpoint'] ?? '(null)',
                 ($discover['cache'] ?? '(null)') ?: config('cache.default', '(null)'),
                 json_encode($discover['scan_dirs'], JSON_UNESCAPED_SLASHES),
                 ($session['store'] ?? '(null)') ?: config('cache.default', '(null)'),

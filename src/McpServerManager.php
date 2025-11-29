@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use support\Cache;
 use support\Container;
+use support\Context;
 use support\Log;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
@@ -110,6 +111,7 @@ final class McpServerManager
     {
         $config = $this->getServiceConfig($serviceName);
 
+        Context::set('McpServerRequest', true);
         $transport = new StdioTransport(logger: $config['logger']);
         $response = $server->run($transport);
 
@@ -131,6 +133,7 @@ final class McpServerManager
         );
         $request = $request->withAttribute(TcpConnection::class, request()->connection);
 
+        Context::set('McpServerRequest', true);
         $transport = new StreamableHttpTransport(request: $request, corsHeaders: $headers, logger: $config['logger']);
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
@@ -141,7 +144,11 @@ final class McpServerManager
     private function getResponseBody(StreamInterface $body): string
     {
         if ($body instanceof CallbackStream) {
-            $callback = $body->getContents(...);
+            $context = clone Context::get();
+            $callback = function () use ($body, $context) {
+                Context::reset($context);
+                return $body->getContents();
+            };
             Coroutine::isCoroutine() ? Coroutine::defer($callback) : Timer::delay(0.000001, $callback);
             return "\r\n";
         }

@@ -75,6 +75,24 @@ return [
 php webman mcp:inspector mcp
 ```
 
+## 内置工具
+
+### 命令行工具
+
+| 工具            |   参数    |         描述          |
+|:--------------|:-------:|:-------------------:|
+| mcp:server    | service |      启动MCP服务器       |
+| mcp:list      |         |       MCP服务列表       |
+| mcp:make      |  type   |    生成MCP配置或模板代码     |
+| mcp:inspector | service | 启动MCP Inspector调试工具 |
+
+示例：
+
+```shell
+## 查看定义的mcp服务列表以及配置信息
+php webman mcp:list
+```
+
 ## 如何正确记录错误日志
 
 根据`2025-11-25`规范，STDIO传输允许将任何日志记录到stderr中且客户端可以捕获stderr并视为非致命错误，stdout则必须用于传输json-rpc消息。
@@ -104,7 +122,7 @@ return [
                 'constructor' => [
                     runtime_path() . '/logs/mcp.log',
                     7, //$maxFiles
-                    Monolog\Logger::DEBUG,
+                    Monolog\Logger::NOTICE,
                 ],
                 'formatter' => [
                     'class' => Monolog\Formatter\LineFormatter::class,
@@ -119,7 +137,7 @@ return [
             [
                 'class' => Monolog\Handler\StreamHandler::class,
                 'constructor' => [
-                    'php://stderr', // stderr流
+                    STDERR, // stderr流
                     Monolog\Logger::NOTICE, // 设置NOTICE可减少不必要的调试信息
                 ],
                 'formatter' => [
@@ -132,16 +150,15 @@ return [
 ];
 ```
 
-然后在`mcp.php`中设置对应服务的`logger`配置为`mcp_file_log`或`mcp_error_stderr`
+然后我们可以在`mcp.php`中配置以下逻辑：
 
-## 内置命令行工具
-
-| 工具            |   参数    |         描述          |
-|:--------------|:-------:|:-------------------:|
-| mcp:server    | service |      启动MCP服务器       |
-| mcp:list      |         |       MCP服务列表       |
-| mcp:make      |  type   |    生成MCP配置或模板代码     |
-| mcp:inspector | service | 启动MCP Inspector调试工具 |
+```php
+return [
+    'mcp' => [
+        'logger' => config('app.debug', true) ? 'mcp_error_stdout' : 'mcp_file_log'
+  ]
+]
+```
 
 ## 常见问题
 
