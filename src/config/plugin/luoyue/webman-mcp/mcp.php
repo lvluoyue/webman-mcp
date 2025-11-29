@@ -30,8 +30,8 @@ return [
                 experimental: null,
             ));
         },
-        // 服务日志，对应插件下的log配置文件
-        'logger' => 'mcp_error_stderr',
+        // 服务日志，对应插件下的log配置文件，为空则不记录日志
+        'logger' => null,
         // 服务注册配置
         'discover' => [
             // 注解扫描路径
@@ -46,25 +46,33 @@ return [
         ],
         // session设置
         'session' => [
-            'store' => '', // 对应cache.php中的缓存配置名称, null为使用默认的内存缓存（不推荐）
+            'store' => '', // 对应cache.php中的缓存配置名称, null为使用默认的内存缓存（多进程模式下不适用）
             'prefix' => 'mcp-',
             'ttl' => 86400,
         ],
-        // http传输模式下的请求头
-        'headers' => [
+        'transport' => [
+            'stdio' => [
+                'enable' => true,
+            ],
+            'streamable_http' => [
+                // mcp端点
+                'endpoint' => '/mcp',
+                // 额外响应头，可配置CORS跨域
+                'headers' => [
 
-        ],
-        // 路由配置（此配置将注入至webman进程中）
-        'router' => [
-            'enable' => true,
-            'endpoint' => '/mcp', // 路由地址，与process共享此配置
-        ],
-        // 额外自定义进程配置（与process.php配置相同）使用port代替listen
-        'process' => [
-            'enable' => false,
-            'port' => 8080,
-            'count' => 1,
-            'eventloop' => ''
+                ],
+                // 启用后将mcp端点注入到您的路由中
+                'router' => [
+                    'enable' => true
+                ],
+                // 额外的自定义进程配置（与process.php配置相同）使用port代替listen
+                'process' => [
+                    'enable' => false,
+                    'port' => 8080,
+                    'count' => 1,
+                    'eventloop' => ''
+                ]
+            ]
         ]
     ]
 ];

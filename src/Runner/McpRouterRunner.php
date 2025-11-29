@@ -2,9 +2,9 @@
 
 namespace Luoyue\WebmanMcp\Runner;
 
+use Luoyue\WebmanMcp\McpServerManager;
 use support\Container;
 use Webman\Route;
-use Luoyue\WebmanMcp\McpServerManager;
 
 final class McpRouterRunner implements McpRunnerInterface
 {
@@ -15,9 +15,9 @@ final class McpRouterRunner implements McpRunnerInterface
         $mcpServerManager = Container::get(McpServerManager::class);
         foreach ($mcpServerManager->getServiceNames() as $name) {
             $config = $mcpServerManager->getServiceConfig($name);
-            $routerConfig = $config['router'] ?? [];
-            if($routerConfig['enable'] ?? false) {
-                $routes[] = Route::any($routerConfig['endpoint'], fn() => $mcpServerManager->start($name));
+            $httpConfig = $config['transport']['streamable_http'];
+            if ($httpConfig['router']['enable'] ?? false) {
+                $routes[] = Route::any($httpConfig['endpoint'], fn() => $mcpServerManager->start($name));
             }
         }
         return $routes;

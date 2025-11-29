@@ -1,10 +1,6 @@
 # webman-mcp
 
-![Packagist Version](https://img.shields.io/packagist/v/luoyue/webman-mcp)
-![Packagist License](https://img.shields.io/packagist/l/luoyue/webman-mcp)
-![Packagist Dependency Version](https://img.shields.io/packagist/dependency-v/luoyue/webman-mcp/php)
-![Packagist Downloads](https://img.shields.io/packagist/dt/luoyue/webman-mcp)
-![Packagist Stars](https://img.shields.io/packagist/stars/luoyue/webman-mcp)
+![Packagist Version](https://img.shields.io/packagist/v/luoyue/webman-mcp) ![Packagist License](https://img.shields.io/packagist/l/luoyue/webman-mcp) ![PHP Version](https://img.shields.io/packagist/dependency-v/luoyue/webman-mcp/php) ![SDK Version](https://img.shields.io/packagist/dependency-v/luoyue/webman-mcp/mcp%2Fsdk?label=sdk) ![Packagist Downloads](https://img.shields.io/packagist/dt/luoyue/webman-mcp) ![Packagist Stars](https://img.shields.io/packagist/stars/luoyue/webman-mcp)
 
 这是一个Webman框架与官方MCP PHP SDK深度集成的插件，并在SDK基础上进行了扩展，可快速创建MCP服务器。
 
@@ -21,6 +17,10 @@
 
 ## 安装
 
+```bash
+composer require luoyue/webman-mcp
+```
+
 ### 环境要求
 
 - PHP >= 8.1
@@ -28,12 +28,10 @@
 - webman/cache^2.1
 - webman/redis（可选）
 - Swoole/Swow/Fiber协程（可选，提升SSE性能）
+- monolog/monolog（可选，用于记录服务器日志）
+- phpunit/phpunit（可选，用于无关传输的测试）
 
-```bash
-composer require luoyue/webman-mcp
-```
-
-## 启动方式
+### 启动方式
 
 ```shell
 # 启动 MCP STDIO 服务器, mcp为服务器名称，配置文件中定义
@@ -45,7 +43,7 @@ php webman start
 
 ## 快速开始
 
-### 1. 使用命令行工具创建模板代码
+### 1. 使用命令行工具创建模板代码（也可直接使用插件自带的配置）
 
 ```bash
 # 创建文件后可根据模板代码实现逻辑
@@ -79,15 +77,62 @@ php webman mcp:inspector mcp
 
 ## 如何正确记录错误日志
 
-根据`2025-11-25`规范，STDIO传输允许将任何日志记录到stderr中，stdout必须用于传输json-rpc消息。
-
-从以下表格中看出，在开发时可以将日志记录到stderr是非常可行的，在生产环境中适合使用file记录错误日志。
+根据`2025-11-25`规范，STDIO传输允许将任何日志记录到stderr中且客户端可以捕获stderr并视为非致命错误，stdout则必须用于传输json-rpc消息。
 
 |  日志模式  | STDIO传输 | Streamable HTTP传输 |
 |:------:|:-------:|:-----------------:|
 |  file  |    ✅    |         ✅         |
 | stdout |    ❌    |         ✅         |
 | stderr |    ✅    |         ✅         |
+
+从以上表格中看出：
+
+- 在开发环境中使用stderr很方便的将日在控制台中且不影响运行。
+- 在生产环境中使用file记录日志可以将日志保存在磁盘中，方便后续维护。
+
+配置monolog（必须是插件目录下的log.php）：
+
+```php
+<?php
+
+return [
+    //文件日志记录
+    'mcp_file_log' => [
+        'handlers' => [
+            [
+                'class' => Monolog\Handler\RotatingFileHandler::class,
+                'constructor' => [
+                    runtime_path() . '/logs/mcp.log',
+                    7, //$maxFiles
+                    Monolog\Logger::DEBUG,
+                ],
+                'formatter' => [
+                    'class' => Monolog\Formatter\LineFormatter::class,
+                    'constructor' => [null, 'Y-m-d H:i:s', true],
+                ],
+            ]
+        ]
+    ],
+    // stderr日志记录
+    'mcp_error_stderr' => [
+        'handlers' => [
+            [
+                'class' => Monolog\Handler\StreamHandler::class,
+                'constructor' => [
+                    'php://stderr', // stderr流
+                    Monolog\Logger::NOTICE, // 设置NOTICE可减少不必要的调试信息
+                ],
+                'formatter' => [
+                    'class' => Monolog\Formatter\LineFormatter::class,
+                    'constructor' => [null, 'Y-m-d H:i:s', true],
+                ],
+            ]
+        ]
+    ]
+];
+```
+
+然后在`mcp.php`中设置对应服务的`logger`配置为`mcp_file_log`或`mcp_error_stderr`
 
 ## 内置命令行工具
 

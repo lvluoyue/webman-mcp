@@ -2,11 +2,14 @@
 
 namespace Luoyue\WebmanMcp\Runner;
 
+use ArrayObject;
+use Exception;
 use Luoyue\WebmanMcp\McpServerManager;
 use support\Container;
 use support\Context;
-use Workerman\Connection\TcpConnection;
+use Throwable;
 use Webman\Http\Request;
+use Workerman\Connection\TcpConnection;
 
 final class McpProcessRunner implements McpRunnerInterface
 {
@@ -18,18 +21,21 @@ final class McpProcessRunner implements McpRunnerInterface
         $mcpServerManager = new McpServerManager();
         foreach ($mcpServerManager->getServiceNames() as $name) {
             $config = $mcpServerManager->getServiceConfig($name);
-            $processConfig = $config['process'] ?? [];
-            if($processConfig['enable'] ?? false) {
+            $httpConfig = $config['transport']['streamable_http'];
+            $processConfig = $httpConfig['process'] ?? [];
+            if ($processConfig['enable'] ?? false) {
                 $process[$name] = array_merge($processConfig, [
                     'handler' => McpProcessRunner::class,
                     'listen' => self::getSocketName($processConfig['port']),
                     'constructor' => [
-                        'requestClass'  => Request::class,
+                        'requestClass' => Request::class,
                     ]
                 ]);
-                if($endpoint = $service['router']['endpoint'] ?? null) {
-                    self::$endpoint[$processConfig['port']][$endpoint] = $name;
+                $endpoint = $config['transport']['endpoint'] ?? null;
+                if (!$endpoint || isset(self::$endpoint[$processConfig['port']][$endpoint])) {
+                    throw new Exception('Mcp endpoint is duplicated or not exists');
                 }
+                self::$endpoint[$processConfig['port']][$endpoint] = $name;
             }
         }
         return $process;
@@ -42,11 +48,11 @@ final class McpProcessRunner implements McpRunnerInterface
 
     public function onMessage(TcpConnection $connection, Request $request): void
     {
-        Context::reset(new \ArrayObject([Request::class => $request]));
+        Context::reset(new ArrayObject([Request::class => $request]));
         /** @var McpServerManager $mcpServerManager */
         $mcpServerManager = Container::get(McpServerManager::class);
         try {
-            if($service = self::$endpoint[$request->getLocalPort()][$request->path()] ?? null) {
+            if ($service = self::$endpoint[$request->getLocalPort()][$request->path()] ?? null) {
                 $connection->send($mcpServerManager->start($service));
             } else {
                 $connection->send(response(json_encode([
@@ -54,7 +60,7 @@ final class McpProcessRunner implements McpRunnerInterface
                     'message' => 'Not Found',
                 ]), 404));
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $connection->send(response(json_encode([
                 'error' => 'Server Error',
                 'message' => $e->getMessage(),

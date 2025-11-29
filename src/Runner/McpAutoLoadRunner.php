@@ -4,6 +4,7 @@ namespace Luoyue\WebmanMcp\Runner;
 
 use Luoyue\WebmanMcp\Enum\McpClientRegisterEnum;
 use Luoyue\WebmanMcp\McpServerManager;
+use RuntimeException;
 use support\Container;
 use Webman\App;
 use Webman\Bootstrap;
@@ -29,7 +30,7 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
         }
 
         if ($editor && !$editor instanceof McpClientRegisterEnum) {
-            throw new \RuntimeException('editor must be instanceof McpClientDirectoryEnum');
+            throw new RuntimeException('editor must be instanceof McpClientDirectoryEnum');
         }
 
         $lockFile = base_path('windows.php');
@@ -49,19 +50,20 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
         $mcpServerManager = Container::get(McpServerManager::class);
         foreach ($mcpServerManager->getServiceNames() as $name) {
             $config = $mcpServerManager->getServiceConfig($name);
-            $routerConfig = $config['router'] ?? [];
-            $processConfig = $config['process'] ?? [];
-            if ($routerConfig['enable'] ?? false) {
+            $stdioConfig = $config['transport']['stdio'];
+            $httpConfig = $config['transport']['streamable_http'];
+            $processConfig = $httpConfig['process'] ?? [];
+            if ($httpConfig['router']['enable'] ?? false) {
                 $mcpServers[$editor->getKey()][$name] = [
                     'type' => 'streamableHttp',
-                    'url' => self::parseProcessUrl($worker->getSocketName()) . $routerConfig['endpoint']
+                    'url' => self::parseProcessUrl($worker->getSocketName()) . $config['transport']['endpoint']
                 ];
             } else if ($processConfig['enable'] ?? false) {
                 $mcpServers[$editor->getKey()][$name] = [
                     'type' => 'streamableHttp',
-                    'url' => self::parseProcessUrl(McpProcessRunner::getSocketName($processConfig['port'])) . $routerConfig['endpoint']
+                    'url' => self::parseProcessUrl(McpProcessRunner::getSocketName($processConfig['port'])) . $config['transport']['endpoint']
                 ];
-            } else {
+            } else if ($stdioConfig['enable'] ?? false) {
                 $mcpServers[$editor->getKey()][$name] = [
                     'type' => 'stdio',
                     'command' => 'php',

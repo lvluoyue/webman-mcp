@@ -2,12 +2,14 @@
 
 namespace Luoyue\WebmanMcp;
 
+use Generator;
+use InvalidArgumentException;
+use Luoyue\WebmanMcp\Server\StreamableHttpTransport;
 use Mcp\Server;
+use Mcp\Server\Session\InMemorySessionStore;
 use Mcp\Server\Session\Psr16StoreSession;
 use Mcp\Server\Transport\CallbackStream;
 use Mcp\Server\Transport\StdioTransport;
-use Luoyue\WebmanMcp\Server\StreamableHttpTransport;
-use Mcp\Server\Session\InMemorySessionStore;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -21,7 +23,6 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine;
 use Workerman\Timer;
 use Workerman\Worker;
-use Generator;
 use function request;
 
 final class McpServerManager
@@ -51,7 +52,7 @@ final class McpServerManager
             $config['discover']['exclude_dirs'] ??= ['vendor'];
 
             if (!isset($config['session'])) {
-                throw new \InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
+                throw new InvalidArgumentException("Mcp server [{$serviceName}] session store not found.");
             }
 
             $sessionConfig = $config['session'];
@@ -65,7 +66,7 @@ final class McpServerManager
     }
 
     /**
-     * @return Generator<String>
+     * @return Generator<string>
      */
     public function getServiceNames(): Generator
     {
@@ -76,7 +77,7 @@ final class McpServerManager
     {
         $config = self::$config[$serviceName] ?? null;
         if (!$config) {
-            throw new \InvalidArgumentException("Mcp server [{$serviceName}] not found.");
+            throw new InvalidArgumentException("Mcp server [{$serviceName}] not found.");
         }
         return $config;
     }
@@ -118,6 +119,7 @@ final class McpServerManager
     private function handleHttpRequest(Server $server, string $serviceName): Response
     {
         $config = $this->getServiceConfig($serviceName);
+        $headers = $config['transport']['streamable_http']['headers'] ?? [];
 
         $request = new ServerRequest(
             request()->method(),
@@ -129,7 +131,7 @@ final class McpServerManager
         );
         $request = $request->withAttribute(TcpConnection::class, request()->connection);
 
-        $transport = new StreamableHttpTransport(request: $request, corsHeaders: $config['headers'] ?? [], logger: $config['logger']);
+        $transport = new StreamableHttpTransport(request: $request, corsHeaders: $headers, logger: $config['logger']);
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
 
@@ -138,7 +140,7 @@ final class McpServerManager
 
     private function getResponseBody(StreamInterface $body): string
     {
-        if($body instanceof CallbackStream) {
+        if ($body instanceof CallbackStream) {
             $callback = $body->getContents(...);
             Coroutine::isCoroutine() ? Coroutine::defer($callback) : Timer::delay(0.000001, $callback);
             return "\r\n";
