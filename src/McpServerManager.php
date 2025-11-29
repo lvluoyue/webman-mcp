@@ -10,6 +10,7 @@ use Mcp\Server\Session\InMemorySessionStore;
 use Mcp\Server\Session\Psr16StoreSession;
 use Mcp\Server\Transport\CallbackStream;
 use Mcp\Server\Transport\StdioTransport;
+use Mcp\Server\Transport\TransportInterface;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -18,6 +19,7 @@ use Psr\Log\NullLogger;
 use support\Cache;
 use support\Container;
 use support\Log;
+use WeakMap;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine;
@@ -31,11 +33,18 @@ final class McpServerManager
 
     private static array $config;
 
+    /** @var array<Server> */
+    private static array $server = [];
+
+    /** @var WeakMap<TransportInterface, int> */
+    private static WeakMap $transports;
+
     public const PLUGIN_REWFIX = 'plugin.luoyue.webman-mcp.';
 
     public function __construct()
     {
         self::$config = config(self::PLUGIN_REWFIX . 'mcp', []);
+        self::$transports ??= new WeakMap();
     }
 
     public static function loadConfig(): void
@@ -82,6 +91,14 @@ final class McpServerManager
         return $config;
     }
 
+    /**
+     * @return WeakMap<TransportInterface, int>
+     */
+    public function getTransports(): WeakMap
+    {
+        return self::$transports;
+    }
+
     public function start(string $serviceName): mixed
     {
         if (!self::$isInit) {
@@ -90,18 +107,20 @@ final class McpServerManager
         }
 
         $config = $this->getServiceConfig($serviceName);
-        $discover = $config['discover'];
+        if (!isset(self::$server[$serviceName])) {
+            $discover = $config['discover'];
+            $server = Server::builder()
+                ->setDiscovery(base_path(), $discover['scan_dirs'], $discover['exclude_dirs'], $discover['cache'])
+                ->setContainer(Container::instance())
+                ->setSession($config['session'])
+                ->setLogger($config['logger']);
+            if (isset($config['configure']) && is_callable($config['configure'])) {
+                ($config['configure'])($server);
+            }
 
-        $server = Server::builder()
-            ->setDiscovery(base_path(), $discover['scan_dirs'], $discover['exclude_dirs'], $discover['cache'])
-            ->setContainer(Container::instance())
-            ->setSession($config['session'])
-            ->setLogger($config['logger']);
-        if (isset($config['configure']) && is_callable($config['configure'])) {
-            ($config['configure'])($server);
+            self::$server[$serviceName] = $server->build();
         }
-
-        $server = $server->build();
+        $server = self::$server[$serviceName];
 
         return Worker::getAllWorkers() ? $this->handleHttpRequest($server, $serviceName) : $this->handleStdioMessage($server, $serviceName);
     }
@@ -111,6 +130,7 @@ final class McpServerManager
         $config = $this->getServiceConfig($serviceName);
 
         $transport = new StdioTransport(logger: $config['logger']);
+        self::$transports[$transport] = time();
         $response = $server->run($transport);
 
         return $response;
@@ -132,6 +152,8 @@ final class McpServerManager
         $request = $request->withAttribute(TcpConnection::class, request()->connection);
 
         $transport = new StreamableHttpTransport(request: $request, corsHeaders: $headers, logger: $config['logger']);
+        self::$transports[$transport] = time();
+
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
 
