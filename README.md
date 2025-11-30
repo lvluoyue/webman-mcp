@@ -6,6 +6,8 @@
 
 > 此插件依赖于官方的[MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk)，我们正在努力完善与SDK的兼容性。
 
+> SDK文档与此插件无较大语法差异，所以文档仅展示插件功能和sdk的差异。
+
 ## 特性
 
 - 一键启动，安装后即可启动，同时支持配置复杂的功能。
@@ -94,7 +96,15 @@ php webman mcp:inspector mcp
 php webman mcp:list
 ```
 
-## 如何正确记录错误日志
+[//]: # (### MCP开发工具)
+
+## 日志记录
+
+### 发送客户端日志
+
+请参考[官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)
+
+### 记录服务器错误日志
 
 根据`2025-11-25`规范，STDIO传输允许将任何日志记录到stderr中且客户端可以捕获stderr并视为非致命错误，stdout则必须用于传输json-rpc消息。
 
@@ -156,30 +166,69 @@ return [
 ```php
 return [
     'mcp' => [
-        'logger' => config('app.debug', true) ? 'mcp_error_stdout' : 'mcp_file_log'
+        'logger' => config('app.debug', true) ? 'mcp_error_stderr' : 'mcp_file_log'
   ]
 ]
 ```
 
-## 常见问题
+## 与webman的兼容问题
 
-### STDIO和Streamable HTTP是什么，与路由模式、进程模式有什么区别
+### McpTool注解如何将Controller结合使用
 
-`STDIO`和`Streamable HTTP`属于MCP中客户端与服务器的通信方式，`STDIO`通过**标准输入输出**进行通信，而`Streamable HTTP`则通过
-**HTTP**进行通信。  
-`路由模式`和`进程模式`则分别对应服务端的启动方式，路由模式下，MCP服务运行在`Webman`的**路由**中，进程模式下，MCP服务运行在单独的
-**自定义进程**中。
+由于webman控制器和mcp处理机制差异，无法完美兼容，但需要稍加改动即可适配。具体操作如下：
 
-### 我通过Streamable HTTP开发的MCP切换到STDIO时无法调用MCP工具
+1. mcp执行`controller`行为与配置`app.controller_reuse=true`相同，实例化后放入容器中复用。
+2. 无法使用webman^2.1的参数绑定和Request注入，orm注入等，但可使用助手函数`request()`和`response()`获取请求响应对象。
+3. 判断是否是mcp执行环境可使用`Context::get('McpServerRequest', false);`返回true时为mcp环境。
+4. 可根据第三条方法为不同的环境返回不同的响应。
 
-由于标准输入输出在读取时是**阻塞**的，因此无法使用`webman`
-中的部分功能，如您有更好的解决方案，欢迎到此处讨论：[Discussions #3](https://github.com/lvluoyue/webman-mcp/discussions/3)
+示例：
 
-### 关于两种日志记录的区别
+```php
+<?php
 
-- 服务端日志：MCP执行过程种产生的日志。记录了错误信息及调试信息。生产环境可设置为`error`级别。
-- 客户端日志：在服务端执行过程中服务端向客户端发送日志，使用方法参考
-  [官方文档](https://github.com/modelcontextprotocol/php-sdk/blob/main/docs/client-communication.md)。
+use support\Context;
+use Workerman\Protocols\Http\Response;
+
+class McpController
+{
+
+    /**
+     * tool示例代码
+     *
+     * @return array 返回包含会话ID的状态信息
+     */
+    #[McpTool(name: 'example_tool')]
+    public function exampleTool(): Response|array
+    {
+        $result = [
+            'status' => 'ok',
+            'params' => request()->all(),
+        ];
+        if (Context::get('McpServerRequest'), false) {
+            return  $result;
+        }
+        return response($result);
+    }
+}
+
+```
+
+### 协程环境与非协程环境的限制
+
+此插件已将SDK中SSE轮询阻塞函数`usleep`替换为workerman自带的非阻塞方法`Timer::sleep()`，结果如下：
+
+- 协程环境下：阻塞部分变为非阻塞，原有业务代码不受影响。
+- 非协程环境下：相关代码依然为阻塞状态，严重影响业务代码，阻塞周期为0.1秒为单位，可使用自定义进程与webman进程分离，从而达到互不干扰。
+
+### STDIO传输和phpunit单元测试的限制
+
+STDIO传输与phpunit单元测试中具有相同的缺点：
+
+- 在linux/macos系统中此功能可能不受影响，在windows系统中，由于平台限制，无法将其设置为非阻塞。
+- 根据上面的问题，在webman中无法使用依赖workerman环境中的函数：定时器、定时任务、协程、http-client等。
+
+相关讨论：[Discussions #3](https://github.com/lvluoyue/webman-mcp/discussions/3)
 
 ## 参考文档
 
