@@ -175,7 +175,7 @@ return [
 
 ### McpTool注解如何将Controller结合使用
 
-由于webman控制器和mcp处理机制差异，无法完美兼容，但需要稍加改动即可适配。具体操作如下：
+由于webman控制器和mcp消息处理机制差异，无法完美兼容，需要稍加改动即可适配。具体操作如下：
 
 1. mcp执行`controller`行为与配置`app.controller_reuse=true`相同，实例化后放入容器中复用。
 2. 无法使用webman^2.1的参数绑定和Request注入，orm注入等，但可使用助手函数`request()`和`response()`获取请求响应对象。

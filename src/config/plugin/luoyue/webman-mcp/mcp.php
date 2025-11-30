@@ -41,7 +41,7 @@ return [
             // 排除扫描路径
             'exclude_dirs' => [
             ],
-            // cache.php中的缓存配置名称，用于缓存扫描结果，加快启动速度
+            // 缓存扫描结果，cache.php中的缓存配置名称，对于webman常驻内存框架无提升并且无法及时清理缓存，建议关闭。
             'cache' => null,
         ],
         // session设置

@@ -124,7 +124,7 @@ final class McpMakeCommand extends Command
                     // 排除扫描路径
                     'exclude_dirs' => [
                     ],
-                    // cache.php中的缓存配置名称，用于缓存扫描结果，加快启动速度
+                    // 缓存扫描结果，cache.php中的缓存配置名称，对于webman常驻内存框架无提升并且无法及时清理缓存，建议关闭。
                     'cache' => null,
                 ],
                 // session设置
@@ -133,21 +133,29 @@ final class McpMakeCommand extends Command
                     'prefix' => 'mcp-',
                     'ttl' => 86400,
                 ],
-                // http传输模式下的请求头
-                'headers' => [
-
-                ],
-                // 路由配置（此配置将注入至webman进程中）
-                'router' => [
-                    'enable' => true,
-                    'endpoint' => '/mcp', // 路由地址，与process共享此配置
-                ],
-                // 额外自定义进程配置（与process.php配置相同）使用port代替listen
-                'process' => [
-                    'enable' => false,
-                    'port' => 8080,
-                    'count' => 1,
-                    'eventloop' => ''
+                'transport' => [
+                    'stdio' => [
+                        'enable' => true,
+                    ],
+                    'streamable_http' => [
+                        // mcp端点
+                        'endpoint' => '/mcp',
+                        // 额外响应头，可配置CORS跨域
+                        'headers' => [
+        
+                        ],
+                        // 启用后将mcp端点注入到您的路由中
+                        'router' => [
+                            'enable' => true
+                        ],
+                        // 额外的自定义进程配置（与process.php配置相同）使用port代替listen
+                        'process' => [
+                            'enable' => false,
+                            'port' => 8080,
+                            'count' => 1,
+                            'eventloop' => ''
+                        ]
+                    ]
                 ]
             ]
         EOF;

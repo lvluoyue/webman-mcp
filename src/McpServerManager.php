@@ -56,9 +56,7 @@ final class McpServerManager
                     Log::channel(self::PLUGIN_REWFIX . $config['logger']) : Container::get(NullLogger::class);
             }
 
-            if (isset($config['discover']['cache'])) {
-                $config['discover']['cache'] = Cache::store($config['discover']['cache']);
-            }
+            $config['discover']['cache'] ??= $config['discover']['cache'] === null ? null : Cache::store($config['discover']['cache']);
             $config['discover']['exclude_dirs'] ??= ['vendor'];
 
             if (!isset($config['session'])) {
@@ -115,9 +113,7 @@ final class McpServerManager
                 ->setContainer(Container::instance())
                 ->setSession($config['session'])
                 ->setLogger($config['logger']);
-            if (isset($config['configure']) && is_callable($config['configure'])) {
-                ($config['configure'])($server);
-            }
+            isset($config['configure']) && is_callable($config['configure']) && ($config['configure'])($server);
 
             self::$server[$serviceName] = $server->build();
         }
@@ -133,6 +129,7 @@ final class McpServerManager
         Context::set('McpServerRequest', true);
         $transport = new StdioTransport(logger: $config['logger']);
         self::$transports[$transport] = time();
+
         $response = $server->run($transport);
 
         return $response;

@@ -2,9 +2,11 @@
 
 namespace Luoyue\WebmanMcp\Server;
 
+use Http\Discovery\Psr17FactoryDiscovery;
+use JsonException;
 use Mcp\Schema\JsonRpc\Error;
 use Mcp\Server\Transport\CallbackStream;
-use \Mcp\Server\Transport\StreamableHttpTransport as BaseStreamableHttpTransport;
+use Mcp\Server\Transport\StreamableHttpTransport as BaseStreamableHttpTransport;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,6 +16,7 @@ use Symfony\Component\Uid\Uuid;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\ServerSentEvents;
 use Workerman\Timer;
+use const JSON_THROW_ON_ERROR;
 
 class StreamableHttpTransport extends BaseStreamableHttpTransport
 {
@@ -24,13 +27,15 @@ class StreamableHttpTransport extends BaseStreamableHttpTransport
      * @param array<string, string> $corsHeaders
      */
     public function __construct(
-        private readonly ServerRequestInterface    $request,
-        private readonly ?ResponseFactoryInterface $responseFactory = null,
-        ?StreamFactoryInterface                    $streamFactory = null,
-        array                                      $corsHeaders = [],
-        ?LoggerInterface                           $logger = null,
-    ) {
+        readonly ServerRequestInterface   $request,
+        private ?ResponseFactoryInterface $responseFactory = null,
+        ?StreamFactoryInterface           $streamFactory = null,
+        array                             $corsHeaders = [],
+        ?LoggerInterface                  $logger = null,
+    )
+    {
         $this->connection = $request->getAttribute(TcpConnection::class);
+        $this->responseFactory = $responseFactory ?? Psr17FactoryDiscovery::findResponseFactory();
         parent::__construct($request, $responseFactory, $streamFactory, $corsHeaders, $logger);
     }
 
@@ -107,12 +112,12 @@ class StreamableHttpTransport extends BaseStreamableHttpTransport
 
         if (null !== $finalResult) {
             try {
-                $encoded = json_encode($finalResult, \JSON_THROW_ON_ERROR);
+                $encoded = json_encode($finalResult, JSON_THROW_ON_ERROR);
                 $this->connection->send(new ServerSentEvents([
                     'event' => 'message',
                     'data' => $encoded,
                 ]));
-            } catch (\JsonException $e) {
+            } catch (JsonException $e) {
                 $this->logger->error('SSE: Failed to encode final Fiber result.', ['exception' => $e]);
             }
         }
