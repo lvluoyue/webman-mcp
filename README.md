@@ -11,9 +11,10 @@
 - 一键启动，安装后即可启动，同时支持配置复杂的功能。
 - 一个项目支持多个MCP服务器，并按服务器名称隔离配置。
 - 与Webman框架深度集成，HTTP支持路由模式和自定义进程模式。
-- 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）
-- 支持 STDIO、Streamable HTTP 高性能传输
-- 内置MCP命令行开发工具
+- 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）。
+- 支持 STDIO、Streamable HTTP 高性能传输。
+- 支持协程与非协程，从而提高了在sse场景下高性能传输。
+- 内置MCP命令行开发工具。
 
 ## 安装
 
@@ -31,7 +32,7 @@ composer require luoyue/webman-mcp
 - monolog/monolog（可选，用于记录服务器日志）
 - phpunit/phpunit（可选，用于无关传输的测试）
 
-### 启动方式
+## 启动方式
 
 ```shell
 # 启动 MCP STDIO 服务器, mcp为服务器名称，配置文件中定义
