@@ -1,5 +1,6 @@
 <?php
 
+use Luoyue\WebmanMcp\Server\DevelopmentMcpLoader;
 use Mcp\Schema\Enum\ProtocolVersion;
 use Mcp\Schema\ServerCapabilities;
 use Mcp\Server\Builder;
@@ -29,6 +30,8 @@ return [
                 completions: true,
                 experimental: null,
             ));
+            // 添加开发环境工具，仅debug模式下启用
+            config('app.debug') && $server->addLoader(new DevelopmentMcpLoader);
         },
         // 服务日志，对应插件下的log配置文件，为空则不记录日志
         'logger' => null,

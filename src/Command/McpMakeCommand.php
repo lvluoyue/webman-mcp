@@ -112,6 +112,8 @@ final class McpMakeCommand extends Command
                         completions: true,
                         experimental: null,
                     ));
+                    // 添加开发环境工具，仅debug模式下启用
+                    config('app.debug') && \$server->addLoader(new DevelopmentMcpLoader);
                 },
                 // 服务日志，对应插件下的log配置文件
                 'logger' => '{$questions['logger']}',
