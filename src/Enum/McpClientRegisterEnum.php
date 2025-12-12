@@ -6,16 +6,28 @@ enum McpClientRegisterEnum: string
 {
     /** cursor编辑器(工作区安装) */
     case CURSOR_IDE = './.cursor/mcp.json';
-    
+
     /** vscode编辑器(工作区安装) */
     case VSCODE_IDE = './.vscode/mcp.json';
-    
+
+    /** claude(工作区安装) */
+    case CLAUDE_CODE = './.mcp.json';
+
+    /** claude桌面版(全局安装) */
+    case CLAUDE_DESKTOP = '%APPDATA%\Claude\claude_desktop_config.json';
+
+    /** qwen code(全局安装) */
+    case QWEN_CODE = '%USERPROFILE%/.qwen/settings.json';
+
+    /** Trae CN编辑器(全局安装) */
+    case TRAE_IDE = '%APPDATA%/Trae CN/User/mcp.json';
+
     /** 通义灵码编辑器(工作区安装) */
     case LINGMA_IDE = '%APPDATA%/Lingma/SharedClientCache/lingma_mcp.json';
-    
+
     /** 通义灵码插件(全局安装) */
     case LINGMA_PLUGIN = '%USERPROFILE%/.lingma/lingma_mcp.json';
-    
+
     /** cline插件-vscode(全局安装) */
     case CLINE_VSCODE_PLUGIN = '%APPDATA%/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json';
 

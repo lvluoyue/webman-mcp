@@ -21,7 +21,10 @@
 ## 安装
 
 ```bash
+# 稳定版本
 composer require luoyue/webman-mcp
+# 开发预览版本
+composer require luoyue/webman-mcp:^dev-master php/sdk:^dev-main
 ```
 
 ### 环境要求
@@ -29,6 +32,9 @@ composer require luoyue/webman-mcp
 - PHP >= 8.1
 - webman^2.1
 - webman/cache^2.1
+
+### 可选依赖
+
 - webman/redis（可选）
 - Swoole/Swow/Fiber协程（可选，提升SSE性能）
 - monolog/monolog（可选，用于记录服务器日志）
