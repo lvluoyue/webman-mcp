@@ -31,7 +31,7 @@ final class McpProcessRunner implements McpRunnerInterface
                         'requestClass' => Request::class,
                     ]
                 ]);
-                $endpoint = $config['transport']['endpoint'] ?? null;
+                $endpoint = $httpConfig['endpoint'] ?? null;
                 if (!$endpoint || isset(self::$endpoint[$processConfig['port']][$endpoint])) {
                     throw new Exception('Mcp endpoint is duplicated or not exists');
                 }

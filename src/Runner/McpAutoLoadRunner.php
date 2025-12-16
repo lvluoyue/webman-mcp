@@ -56,12 +56,12 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
             if ($httpConfig['router']['enable'] ?? false) {
                 $mcpServers[$editor->getKey()][$name] = [
                     'type' => 'streamableHttp',
-                    'url' => self::parseProcessUrl($worker->getSocketName()) . $config['transport']['endpoint']
+                    'url' => self::parseProcessUrl($worker->getSocketName()) . $httpConfig['endpoint']
                 ];
             } else if ($processConfig['enable'] ?? false) {
                 $mcpServers[$editor->getKey()][$name] = [
                     'type' => 'streamableHttp',
-                    'url' => self::parseProcessUrl(McpProcessRunner::getSocketName($processConfig['port'])) . $config['transport']['endpoint']
+                    'url' => self::parseProcessUrl(McpProcessRunner::getSocketName($processConfig['port'])) . $httpConfig['endpoint']
                 ];
             } else if ($stdioConfig['enable'] ?? false) {
                 $mcpServers[$editor->getKey()][$name] = [
