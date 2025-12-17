@@ -1,20 +1,20 @@
 <?php
+
 namespace Luoyue\WebmanMcp;
 
 class Install
 {
-    const WEBMAN_PLUGIN = true;
+    public const WEBMAN_PLUGIN = true;
 
     /**
      * @var array
      */
-    protected static $pathRelation = array (
-  'config/plugin/luoyue/webman-mcp' => 'config/plugin/luoyue/webman-mcp',
-);
+    protected static $pathRelation = [
+        'config/plugin/luoyue/webman-mcp' => 'config/plugin/luoyue/webman-mcp',
+    ];
 
     /**
-     * Install
-     * @return void
+     * Install.
      */
     public static function install()
     {
@@ -22,8 +22,7 @@ class Install
     }
 
     /**
-     * Uninstall
-     * @return void
+     * Uninstall.
      */
     public static function uninstall()
     {
@@ -31,33 +30,31 @@ class Install
     }
 
     /**
-     * installByRelation
-     * @return void
+     * installByRelation.
      */
     public static function installByRelation()
     {
         foreach (static::$pathRelation as $source => $dest) {
             if ($pos = strrpos($dest, '/')) {
-                $parent_dir = base_path().'/'.substr($dest, 0, $pos);
+                $parent_dir = base_path() . '/' . substr($dest, 0, $pos);
                 if (!is_dir($parent_dir)) {
                     mkdir($parent_dir, 0777, true);
                 }
             }
-            //symlink(__DIR__ . "/$source", base_path()."/$dest");
-            copy_dir(__DIR__ . "/$source", base_path()."/$dest");
+            // symlink(__DIR__ . "/$source", base_path()."/$dest");
+            copy_dir(__DIR__ . "/$source", base_path() . "/$dest");
             echo "Create $dest
 ";
         }
     }
 
     /**
-     * uninstallByRelation
-     * @return void
+     * uninstallByRelation.
      */
     public static function uninstallByRelation()
     {
         foreach (static::$pathRelation as $source => $dest) {
-            $path = base_path()."/$dest";
+            $path = base_path() . "/{$dest}";
             if (!is_dir($path) && !is_file($path)) {
                 continue;
             }
@@ -70,5 +67,4 @@ class Install
             remove_dir($path);
         }
     }
-    
 }

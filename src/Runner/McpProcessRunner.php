@@ -29,7 +29,7 @@ final class McpProcessRunner implements McpRunnerInterface
                     'listen' => self::getSocketName($processConfig['port']),
                     'constructor' => [
                         'requestClass' => Request::class,
-                    ]
+                    ],
                 ]);
                 $endpoint = $httpConfig['endpoint'] ?? null;
                 if (!$endpoint || isset(self::$endpoint[$processConfig['port']][$endpoint])) {
