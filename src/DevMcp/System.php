@@ -2,10 +2,13 @@
 
 namespace Luoyue\WebmanMcp\DevMcp;
 
+use Closure;
 use Composer\InstalledVersions;
 use function config;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Webman\Route;
+use Webman\Route\Route as RouteObject;
 use Workerman\Coroutine;
 use Workerman\Worker;
 
@@ -34,15 +37,47 @@ class System
     public function getConfig(
         #[Schema(description: '配置文件名')]
         ?string $path = null,
-    ): ?array {
+    ): ?array
+    {
         return config($path);
+    }
+
+    #[McpTool(name: 'list_routes', description: '获取路由列表.')]
+    public function listRoutes(): array
+    {
+        $callback = function (RouteObject $route) {
+            $cb = $route->getCallback();
+            $cb = $cb instanceof Closure ? 'Closure' : (is_array($cb) ? json_encode($cb) : var_export($cb, 1));
+            return [
+                'name' => $route->getName(),
+                'uri' => $route->getPath(),
+                'methods' => $route->getMethods(),
+                'callback' => $cb,
+                'param' => $route->param(),
+                'middleware' => json_encode($route->getMiddleware()),
+            ];
+        };
+        return array_map($callback, Route::getRoutes());
     }
 
     #[McpTool(name: 'get_env', description: '获取应用程序环境变量.')]
     public function getEnv(
         #[Schema(description: '环境变量名')]
         ?string $key = null,
-    ): array|false|string {
+    ): array|false|string
+    {
         return getenv($key);
+    }
+
+    #[McpTool(name: 'eval_code', description: '在当前进程中执行php代码.')]
+    public function evalCode(
+        #[Schema(description: 'php代码')]
+        string $code,
+    ): string
+    {
+        $code = str_replace(['<?php', '?>'], '', $code);
+        ob_start();
+        eval($code);
+        return ob_get_contents();
     }
 }

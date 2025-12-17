@@ -41,7 +41,7 @@ final class McpAutoLoadRunner implements McpRunnerInterface, Bootstrap
 
         $editorPath = $editor->getPath();
         if (!file_exists($editorPath)) {
-            @mkdir(dirname($editorPath));
+            @mkdir(dirname($editorPath), 0777, true);
             $mcpServers = [];
         } else {
             $mcpServers = json_decode(file_get_contents($editorPath), true);

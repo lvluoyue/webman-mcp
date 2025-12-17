@@ -18,7 +18,7 @@ return $config->setRules([
     'control_structure_continuation_position' => true,
     'declare_parentheses' => true,
     'no_multiple_statements_per_line' => true,
-    'braces_position' => true,
+    'braces_position' => false,
     'statement_indentation' => true,
     'no_extra_blank_lines' => true,
     'concat_space' => [
@@ -44,6 +44,6 @@ return $config->setRules([
     'blank_line_between_import_groups' => false,
     'global_namespace_import' => false,
     'nullable_type_declaration_for_default_null_value' => true,
-    'blank_line_before_statement' => false
+    'blank_line_before_statement' => false,
 ])
     ->setFinder($finder);
