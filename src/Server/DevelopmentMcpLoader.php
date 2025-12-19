@@ -2,10 +2,10 @@
 
 namespace Luoyue\WebmanMcp\Server;
 
-use Mcp\Capability\Registry\Loader\DiscoveryLoader;
+use Mcp\Capability\Discovery\Discoverer;
 use Mcp\Capability\Registry\Loader\LoaderInterface;
 use Mcp\Capability\RegistryInterface;
-use Psr\Log\NullLogger;
+use support\Log;
 
 class DevelopmentMcpLoader implements LoaderInterface
 {
@@ -18,7 +18,20 @@ class DevelopmentMcpLoader implements LoaderInterface
 
     public function load(RegistryInterface $registry): void
     {
-        $discoveryLoader = new DiscoveryLoader(base_path(), ['vendor/luoyue/webman-mcp/src/DevMcp', ...$this->path], [], new NullLogger());
-        $discoveryLoader->load($registry);
+        $discoverer = new Discoverer(Log::channel('plugin.luoyue.webman-mcp.mcp_error_stderr'));
+
+        $state = $discoverer->discover(base_path(), ['vendor/luoyue/webman-mcp/src/DevMcp', ...$this->path], []);
+        foreach ($state->getTools() as $tool) {
+            $registry->registerTool($tool->tool, $tool->handler, true);
+        }
+        foreach ($state->getPrompts() as $prompt) {
+            $registry->registerPrompt($prompt->prompt, $prompt->handler, true);
+        }
+        foreach ($state->getResources() as $resource) {
+            $registry->registerResource($resource->resource, $resource->handler, true);
+        }
+        foreach ($state->getResourceTemplates() as $resource) {
+            $registry->registerResourceTemplate($resource->resourceTemplate, $resource->handler, true);
+        }
     }
 }

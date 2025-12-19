@@ -10,39 +10,44 @@ use Mcp\Capability\Attribute\Schema;
 use Webman\Route;
 use Webman\Route\Route as RouteObject;
 use Workerman\Coroutine;
+use Workerman\Events\Fiber;
+use Workerman\Events\Swoole;
+use Workerman\Events\Swow;
 use Workerman\Worker;
 
 class System
 {
-    #[McpTool(name: 'system_info')]
+    #[McpTool(name: 'system_info', description: '获取webman框架信息，php版本信息，系统信息，是否使用协程等')]
     public function sequentialThinking(): array
     {
+        $event_loop = Worker::getEventLoop()::class;
         return [
             'server_os' => PHP_OS,
             'php_version' => PHP_VERSION,
             'workerman_version' => InstalledVersions::getPrettyVersion('workerman/workerman'),
-            'webman_version' => InstalledVersions::getPrettyVersion('webman/webman'),
-            'event_loop' => Worker::getEventLoop()::class,
-            'is_coroutine' => Coroutine::isCoroutine(),
+            'webman_version' => InstalledVersions::getPrettyVersion('workerman/webman-framework'),
+            'event_loop' => $event_loop,
+            // mcp执行时自带fiber导致误判，所以需要额外判断
+            'is_coroutine' => in_array($event_loop, [Swoole::class, Swow::class, Fiber::class]) && Coroutine::isCoroutine(),
         ];
     }
 
-    #[McpTool(name: 'list_dependence', description: '获取当前项目已安装依赖列表.')]
+    #[McpTool(name: 'list_dependence', description: '获取当前项目已安装依赖列表')]
     public function listDependence(): array
     {
         return InstalledVersions::getInstalledPackages();
     }
 
-    #[McpTool(name: 'get_config', description: '获取应用程序配置.')]
+    #[McpTool(name: 'get_config', description: '获取应用程序配置')]
     public function getConfig(
         #[Schema(description: '配置文件名')]
-        ?string $path = null,
-    ): ?array
+        string $path,
+    ): mixed
     {
         return config($path);
     }
 
-    #[McpTool(name: 'list_routes', description: '获取路由列表.')]
+    #[McpTool(name: 'list_routes', description: '获取路由列表')]
     public function listRoutes(): array
     {
         $callback = function (RouteObject $route) {
@@ -60,7 +65,7 @@ class System
         return array_map($callback, Route::getRoutes());
     }
 
-    #[McpTool(name: 'get_env', description: '获取应用程序环境变量.')]
+    #[McpTool(name: 'get_env', description: '获取应用程序环境变量')]
     public function getEnv(
         #[Schema(description: '环境变量名')]
         ?string $key = null,
@@ -69,7 +74,7 @@ class System
         return getenv($key);
     }
 
-    #[McpTool(name: 'eval_code', description: '在当前进程中执行php代码.')]
+    #[McpTool(name: 'eval_code', description: '在当前进程中执行php代码')]
     public function evalCode(
         #[Schema(description: 'php代码')]
         string $code,
