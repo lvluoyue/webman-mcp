@@ -23,19 +23,51 @@ class System
         $event_loop = Worker::getEventLoop()::class;
         return [
             'server_os' => PHP_OS,
+            'server_uname' => php_uname(),
             'php_version' => PHP_VERSION,
             'workerman_version' => InstalledVersions::getPrettyVersion('workerman/workerman'),
             'webman_version' => InstalledVersions::getPrettyVersion('workerman/webman-framework'),
             'event_loop' => $event_loop,
             // mcp执行时自带fiber导致误判，所以需要额外判断
             'is_coroutine' => in_array($event_loop, [Swoole::class, Swow::class, Fiber::class]) && Coroutine::isCoroutine(),
+            'default_temp_dir' => sys_get_temp_dir(),
         ];
     }
 
     #[McpTool(name: 'list_dependence', description: '获取当前项目已安装依赖列表')]
     public function listDependence(): array
     {
-        return InstalledVersions::getInstalledPackages();
+        return InstalledVersions::getAllRawData();
+    }
+
+    /**
+     * @return string[]
+     */
+    #[McpTool('list_extensions', '获取当前环境已加载的php扩展')]
+    public function extensions(): array
+    {
+        return get_loaded_extensions();
+    }
+
+    /**
+     * @return string[]
+     */
+    #[McpTool(name: 'get_extension_funcs', description: '获取扩展已加载的函数')]
+    public function getExtensionFuncs(
+        #[Schema(description: '扩展名')]
+        string $extension,
+    ): array
+    {
+        return get_extension_funcs($extension);
+    }
+
+    #[McpTool(name: 'get_php_ini', description: '获取应用程序配置')]
+    public function getPhpIni(
+        #[Schema(description: '扩展名')]
+        ?string $extension = null,
+    ): mixed
+    {
+        return ini_get_all($extension);
     }
 
     #[McpTool(name: 'get_config', description: '获取应用程序配置')]
