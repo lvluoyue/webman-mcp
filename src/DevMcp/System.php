@@ -5,14 +5,14 @@ namespace Luoyue\WebmanMcp\DevMcp;
 use Closure;
 use Composer\InstalledVersions;
 use function config;
+use Luoyue\WebmanMcp\McpHelper;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Webman\Console\Commands\BuildBinCommand;
+use Webman\Console\Commands\BuildPharCommand;
+use Webman\Event\Event;
 use Webman\Route;
 use Webman\Route\Route as RouteObject;
-use Workerman\Coroutine;
-use Workerman\Events\Fiber;
-use Workerman\Events\Swoole;
-use Workerman\Events\Swow;
 use Workerman\Worker;
 
 class System
@@ -27,9 +27,8 @@ class System
             'php_version' => PHP_VERSION,
             'workerman_version' => InstalledVersions::getPrettyVersion('workerman/workerman'),
             'webman_version' => InstalledVersions::getPrettyVersion('workerman/webman-framework'),
-            'event_loop' => $event_loop,
-            // mcp执行时自带fiber导致误判，所以需要额外判断
-            'is_coroutine' => in_array($event_loop, [Swoole::class, Swow::class, Fiber::class]) && Coroutine::isCoroutine(),
+            'event_loop_class' => $event_loop,
+            'is_coroutine' => McpHelper::is_coroutine(),
             'default_temp_dir' => sys_get_temp_dir(),
         ];
     }
@@ -97,6 +96,21 @@ class System
         return array_map($callback, Route::getRoutes());
     }
 
+    #[McpTool(name: 'list_events', description: '获取事件列表')]
+    public function listEvents(): array
+    {
+        $callback = function ($item) {
+            $event_name = $item[0];
+            $callback = $item[1];
+            if (is_array($callback) && is_object($callback[0])) {
+                $callback[0] = get_class($callback[0]);
+            }
+            $cb = $callback instanceof Closure ? 'Closure' : (is_array($callback) ? json_encode($callback) : var_export($callback, 1));
+            return [$event_name, $cb];
+        };
+        return array_map($callback, Event::list());
+    }
+
     #[McpTool(name: 'get_env', description: '获取应用程序环境变量')]
     public function getEnv(
         #[Schema(description: '环境变量名')]
@@ -116,5 +130,17 @@ class System
         ob_start();
         eval($code);
         return ob_get_contents();
+    }
+
+    #[McpTool(name: 'build_phar', description: '将项目代码打包为phar文件')]
+    public function buildPhar(): string
+    {
+        return McpHelper::fetch_console(BuildPharCommand::class);
+    }
+
+    #[McpTool(name: 'build_bin', description: '将项目代码打包为linux二进制可执行文件')]
+    public function buildBin(): string
+    {
+        return McpHelper::fetch_console(BuildBinCommand::class);
     }
 }
