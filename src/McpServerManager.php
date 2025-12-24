@@ -164,11 +164,10 @@ final class McpServerManager
     {
         if ($body instanceof CallbackStream) {
             $context = clone Context::get();
-            $callback = function () use ($body, $context) {
+            McpHelper::coroutine_defer(function () use ($body, $context) {
                 Context::reset($context);
                 return $body->getContents();
-            };
-            Coroutine::isCoroutine() ? Coroutine::defer($callback) : Timer::delay(0.000001, $callback);
+            });
             return "\r\n";
         }
         return $body->getContents();

@@ -7,15 +7,15 @@ return [
                 'class' => Monolog\Handler\RotatingFileHandler::class,
                 'constructor' => [
                     runtime_path() . '/logs/mcp.log',
-                    7, //$maxFiles
+                    7, // $maxFiles
                     Monolog\Logger::NOTICE,
                 ],
                 'formatter' => [
                     'class' => Monolog\Formatter\LineFormatter::class,
                     'constructor' => [null, 'Y-m-d H:i:s', true],
                 ],
-            ]
-        ]
+            ],
+        ],
     ],
     'mcp_error_stderr' => [
         'handlers' => [
@@ -29,7 +29,7 @@ return [
                     'class' => Monolog\Formatter\LineFormatter::class,
                     'constructor' => [null, 'Y-m-d H:i:s', true],
                 ],
-            ]
-        ]
-    ]
+            ],
+        ],
+    ],
 ];

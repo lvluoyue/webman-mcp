@@ -8,6 +8,7 @@ use function config;
 use Luoyue\WebmanMcp\McpHelper;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
+use Mcp\Exception\ToolCallException;
 use Webman\Console\Commands\BuildBinCommand;
 use Webman\Console\Commands\BuildPharCommand;
 use Webman\Event\Event;
@@ -64,7 +65,7 @@ class System
     public function getPhpIni(
         #[Schema(description: '扩展名')]
         ?string $extension = null,
-    ): mixed
+    ): array|bool
     {
         return ini_get_all($extension);
     }
@@ -99,6 +100,9 @@ class System
     #[McpTool(name: 'list_events', description: '获取事件列表')]
     public function listEvents(): array
     {
+        if (!InstalledVersions::isInstalled('webman/event')) {
+            throw new ToolCallException('请先安装webman/event扩展');
+        }
         $callback = function ($item) {
             $event_name = $item[0];
             $callback = $item[1];
@@ -106,7 +110,10 @@ class System
                 $callback[0] = get_class($callback[0]);
             }
             $cb = $callback instanceof Closure ? 'Closure' : (is_array($callback) ? json_encode($callback) : var_export($callback, 1));
-            return [$event_name, $cb];
+            return [
+                'event_name' => $event_name,
+                'callback' => $cb,
+            ];
         };
         return array_map($callback, Event::list());
     }
@@ -135,12 +142,18 @@ class System
     #[McpTool(name: 'build_phar', description: '将项目代码打包为phar文件')]
     public function buildPhar(): string
     {
+        if (!class_exists(BuildPharCommand::class)) {
+            throw new ToolCallException('当前环境暂不支持执行此tool');
+        }
         return McpHelper::fetch_console(BuildPharCommand::class);
     }
 
     #[McpTool(name: 'build_bin', description: '将项目代码打包为linux二进制可执行文件')]
     public function buildBin(): string
     {
+        if (!class_exists(BuildBinCommand::class)) {
+            throw new ToolCallException('当前环境暂不支持执行此tool');
+        }
         return McpHelper::fetch_console(BuildBinCommand::class);
     }
 }
