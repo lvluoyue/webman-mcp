@@ -105,7 +105,7 @@ class System
     #[McpTool(name: 'match_routes', description: '匹配url对应的路由信息')]
     public function matchRoutes(
         #[Schema(description: 'url路径，不包含域名')]
-        string  $path,
+        string $path,
         #[Schema(description: '请求方法')]
         ?string $method = '',
     ): array
@@ -220,4 +220,5 @@ class System
         }
         return McpHelper::fetch_console(BuildBinCommand::class);
     }
+
 }
