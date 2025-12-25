@@ -11,9 +11,7 @@ class Database
     #[McpTool(name: 'database_connections', description: '获取数据库redis配置信息列表')]
     public function databaseConnections(): array
     {
-        if (!$this->isInstallDatabase()) {
-            throw new ToolCallException('未安装数据库组件');
-        }
+        $this->checkInstallDatabase();
         $connections = config('database.connections', []);
         return [
             'default' => config('database.default'),
@@ -29,8 +27,8 @@ class Database
         ];
     }
 
-    protected function isInstallDatabase(): bool
+    protected function checkInstallDatabase(): void
     {
-        return InstalledVersions::isInstalled('webman/database');
+        !InstalledVersions::isInstalled('webman/database') && throw new ToolCallException('未安装数据库组件');
     }
 }
