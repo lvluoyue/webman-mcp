@@ -5,10 +5,13 @@ namespace Luoyue\WebmanMcp\DevMcp;
 use Closure;
 use Composer\InstalledVersions;
 use function config;
+use FastRoute\Dispatcher;
 use Luoyue\WebmanMcp\McpHelper;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Exception\ToolCallException;
+use ReflectionMethod;
+use Webman\App;
 use Webman\Console\Commands\BuildBinCommand;
 use Webman\Console\Commands\BuildPharCommand;
 use Webman\Event\Event;
@@ -26,6 +29,8 @@ class System
             'server_os' => PHP_OS,
             'server_uname' => php_uname(),
             'php_version' => PHP_VERSION,
+            'php_binary' => PHP_BINARY,
+            'php_sapi_name' => php_sapi_name(),
             'workerman_version' => InstalledVersions::getPrettyVersion('workerman/workerman'),
             'webman_version' => InstalledVersions::getPrettyVersion('workerman/webman-framework'),
             'event_loop_class' => $event_loop,
@@ -97,6 +102,60 @@ class System
         return array_map($callback, Route::getRoutes());
     }
 
+    #[McpTool(name: 'match_routes', description: '匹配url对应的路由信息')]
+    public function matchRoutes(
+        #[Schema(description: 'url路径，不包含域名')]
+        string  $path,
+        #[Schema(description: '请求方法')]
+        ?string $method = '',
+    ): array
+    {
+        $method = strtoupper($method);
+        $getAppByController = new ReflectionMethod(App::class, 'getAppByController');
+        $getRealMethod = new ReflectionMethod(App::class, 'getRealMethod');
+        $routeInfo = Route::dispatch($method, $path);
+        if ($routeInfo[0] === Dispatcher::FOUND) {
+            $callback = $routeInfo[1]['callback'];
+            /** @var RouteObject $route */
+            $route = clone $routeInfo[1]['route'];
+            $app = $controller = $action = '';
+            $args = !empty($routeInfo[2]) ? $routeInfo[2] : [];
+            if ($args) {
+                $route->setParams($args);
+            }
+            $args = array_merge($route->param(), $args);
+
+            if (is_array($callback)) {
+                $controller = $callback[0];
+                $plugin = App::getPluginByClass($controller);
+                $app = $getAppByController->invokeArgs(null, [$controller]);
+                $action = $getRealMethod->invokeArgs(null, [$controller, $callback[1]]) ?? '';
+            } else {
+                $plugin = App::getPluginByPath($path);
+            }
+            return [
+                'plugin' => $plugin,
+                'app' => $app,
+                'controller' => $controller ?: '',
+                'action' => $action,
+                'route' => [
+                    'name' => $route->getName(),
+                    'uri' => $route->getPath(),
+                    'methods' => $route->getMethods(),
+                    'callback' => $callback,
+                    'param' => $route->param(),
+                    'args' => $args,
+                    'middleware' => $route->getMiddleware(),
+                ],
+            ];
+        } else {
+            if ($routeInfo[0] === Dispatcher::METHOD_NOT_ALLOWED) {
+                throw new ToolCallException('Method Not Allowed. Supported methods: ' . implode(', ', $routeInfo[1]));
+            }
+            throw new ToolCallException('Not Found');
+        }
+    }
+
     #[McpTool(name: 'list_events', description: '获取事件列表')]
     public function listEvents(): array
     {
@@ -135,8 +194,13 @@ class System
     {
         $code = str_replace(['<?php', '?>'], '', $code);
         ob_start();
-        eval($code);
-        return ob_get_contents();
+        try {
+            eval($code);
+            $output = ob_get_contents();
+        } finally {
+            ob_end_clean(); // 确保无论是否出错都会清理缓冲区
+        }
+        return $output;
     }
 
     #[McpTool(name: 'build_phar', description: '将项目代码打包为phar文件')]

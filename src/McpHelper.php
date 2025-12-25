@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command as Commands;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Webman\Console\Command;
+use Webman\Context;
 use Workerman\Coroutine;
 use Workerman\Events\Fiber;
 use Workerman\Events\Swoole;
@@ -18,6 +19,15 @@ use Workerman\Worker;
 
 class McpHelper
 {
+    /**
+     * 当前请求是否是mcp请求
+     * @return bool true为mcp请求，false为controller请求
+     */
+    public static function is_mcp_server_request(): bool
+    {
+        return Context::get('McpServerRequest', false);
+    }
+
     /**
      * mcp执行时自带fiber导致误判，所以需要额外判断.
      */
