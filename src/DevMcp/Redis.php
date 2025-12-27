@@ -34,7 +34,7 @@ class Redis
         #[Schema(description: '命令参数数组')]
         array $parameters,
         #[Schema(description: 'Redis连接名称')]
-        string $connection = 'default',
+        ?string $connection = 'default',
     ): array
     {
         $this->checkInstallRedis();
@@ -53,7 +53,7 @@ class Redis
         #[Schema(description: 'Lua脚本内容')]
         string $script,
         #[Schema(description: 'Redis连接名称')]
-        string $connection = 'default',
+        ?string $connection = 'default',
         #[Schema(description: '键数量')]
         int $numKeys = 0,
         #[Schema(description: '参数列表')]
@@ -75,7 +75,7 @@ class Redis
         #[Schema(description: 'Lua脚本内容')]
         string $script,
         #[Schema(description: 'Redis连接名称')]
-        string $connection = 'default',
+        ?string $connection = 'default',
         #[Schema(description: '键数量')]
         int $numKeys = 0,
         #[Schema(description: '参数列表')]

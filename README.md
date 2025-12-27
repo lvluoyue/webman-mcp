@@ -16,7 +16,7 @@
 - 自动注册MCP服务到主流IDE（VSCode、Cursor、通义灵码等）。
 - 支持 STDIO、Streamable HTTP 高性能传输。
 - 支持协程与非协程，从而提高了在sse场景下高性能传输。
-- 内置MCP命令行开发工具。
+- 内置常用20+个MCP开发工具，提升开发效率。
 
 ## 安装
 
@@ -24,7 +24,7 @@
 # 稳定版本
 composer require luoyue/webman-mcp
 # 开发预览版本
-composer require luoyue/webman-mcp:^dev-master php/sdk:^dev-main
+composer require luoyue/webman-mcp:^dev-master mcp/sdk:^dev-main
 ```
 
 ### 环境要求
@@ -39,6 +39,17 @@ composer require luoyue/webman-mcp:^dev-master php/sdk:^dev-main
 - Swoole/Swow/Fiber协程（可选，提升SSE性能）
 - monolog/monolog（可选，用于记录服务器日志）
 - phpunit/phpunit（可选，用于无关传输的测试）
+
+## 注解
+
+|        注解名称         | 描述                                |
+|:-------------------:|:----------------------------------|
+|       McpTool       | 标记一个PHP方法为MCP工具，使其可以被AI调用执行特定功能   |
+|      McpPrompt      | 标记一个PHP方法为MCP提示生成器，用于生成对话提示消息     |
+|     McpResource     | 标记一个PHP方法为MCP资源处理器，用于处理特定资源URI的请求 |
+| McpResourceTemplate | 标记一个PHP方法为MCP资源模板，用于定义资源URI模板     |
+|       Schema        | 定义方法或参数的JSON Schema，用于参数验证和类型检查   |
+| CompletionProvider  | 为参数提供自动完成功能，指定可能的值或提供者类           |
 
 ## 启动方式
 
@@ -58,6 +69,8 @@ php webman start
 # 创建文件后可根据模板代码实现逻辑
 php webman mcp:make template
 ```
+
+实际上并不太需要此命令创建代码，因为使用方法已足够简单，只需在方法中声明注解即可。
 
 ### 2. 配置客户端连接配置
 
@@ -102,7 +115,31 @@ php webman mcp:inspector mcp
 php webman mcp:list
 ```
 
-[//]: # (### MCP开发工具)
+### MCP开发工具
+
+|      类别       |          名称           | 描述                                 |
+|:-------------:|:---------------------:|:-----------------------------------|
+|     tool      |  sequential_thinking  | 让ai进入深度思考                          |
+|     tool      |      system_info      | 获取webman框架信息，php版本信息，系统信息，是否使用协程   |
+| tool/resource |      get_config       | 获取config配置信息                       |
+| tool/resource |        get_env        | 获取env环境变量信息                        |
+|     tool      |     list_process      | 获取进程列表                             |
+|     tool      |      list_routes      | 获取路由列表                             |
+|     tool      |     match_routes      | 匹配url对应的路由信息                       |
+|     tool      |    list_dependence    | 获取项目依赖列表                           |
+|     tool      |    list_extensions    | 获取当前环境已加载的php扩展                    |
+|     tool      |  get_extension_funcs  | 获取扩展已加载的函数                         |
+|     tool      |      list_events      | 获取事件列表                             |
+|     tool      |       eval_code       | 执行php代码                            |
+|     tool      |      build_phar       | 将项目代码打包为phar文件                     |
+|     tool      |       build_bin       | 将项目代码打包为linux二进制可执行文件              |
+|     tool      | database_connections  | 获取数据库连接配置信息列表                      |
+|     tool      |    database_schema    | 获取表的详细模式信息（查看所有表，检查列、约束、索引，理解外键关系） |
+|     tool      | database_execute_sql  | 执行原始sql脚本                          |
+|     tool      |   redis_connections   | 获取数据库redis配置信息列表                   |
+|     tool      |   redis_execute_raw   | 执行原始Redis命令                        |
+|     tool      |   redis_execute_lua   | 执行Redis Lua脚本                      |
+|     tool      | redis_execute_lua_sha | 使用sha1执行Redis Lua脚本                |
 
 ## 日志记录
 
@@ -194,6 +231,7 @@ return [
 <?php
 
 use support\Context;
+use Mcp\Server\RequestContext;
 use Workerman\Protocols\Http\Response;
 
 class McpController
@@ -205,19 +243,19 @@ class McpController
      * @return array 返回包含会话ID的状态信息
      */
     #[McpTool(name: 'example_tool')]
-    public function exampleTool(): Response|array
+    public function exampleTool(?RequestContext $context): Response|array
     {
         $result = [
             'status' => 'ok',
             'params' => request()->all(),
         ];
+        $context?->getClientLogger()->info('example_tool', $result);
         if (Context::get('McpServerRequest'), false) {
             return  $result;
         }
         return response($result);
     }
 }
-
 ```
 
 ### 协程环境与非协程环境的限制

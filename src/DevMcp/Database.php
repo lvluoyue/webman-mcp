@@ -4,7 +4,10 @@ namespace Luoyue\WebmanMcp\DevMcp;
 
 use Composer\InstalledVersions;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Capability\Attribute\Schema;
 use Mcp\Exception\ToolCallException;
+use support\Db;
+use Throwable;
 
 class Database
 {
@@ -25,6 +28,24 @@ class Database
                 ];
             }, array_keys($connections), array_values($connections)),
         ];
+    }
+
+    #[McpTool(name: 'database_execute_sql', description: '执行原始sql脚本')]
+    public function database_execute_sql(
+        #[Schema(description: 'sql脚本')]
+        string  $sql,
+        #[Schema(description: 'database连接名称')]
+        ?string $connection = 'default',
+    ): array
+    {
+        $this->checkInstallDatabase();
+        try {
+            return [
+                'result' => Db::connection($connection)->raw($sql),
+            ];
+        } catch (Throwable $e) {
+            throw new ToolCallException('执行sql失败: ' . $e->getMessage());
+        }
     }
 
     protected function checkInstallDatabase(): void
