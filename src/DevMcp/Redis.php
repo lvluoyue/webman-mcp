@@ -15,7 +15,7 @@ class Redis
     public function databaseConnections(): array
     {
         $this->checkInstallRedis();
-        $connections = config('redis.connections', []);
+        $connections = config('redis', []);
         return [
             'default' => 'default',
             'connections' => array_map(function ($key, $connection) {
@@ -32,21 +32,16 @@ class Redis
     #[McpTool(name: 'redis_execute_raw', description: '执行原始Redis命令')]
     public function executeRaw(
         #[Schema(description: '命令参数数组')]
-        array  $parameters,
+        array $parameters,
         #[Schema(description: 'Redis连接名称')]
         string $connection = 'default',
     ): array
     {
         $this->checkInstallRedis();
-
         try {
-            $redis = RedisInstance::connection($connection);
-            // 执行原始命令
-            $result = $redis->executeRaw($parameters);
-
             return [
                 'success' => true,
-                'result' => $result,
+                'result' => RedisInstance::connection($connection)->executeRaw($parameters),
             ];
         } catch (Throwable $e) {
             throw new ToolCallException('执行原始命令失败: ' . $e->getMessage());
@@ -60,49 +55,38 @@ class Redis
         #[Schema(description: 'Redis连接名称')]
         string $connection = 'default',
         #[Schema(description: '键数量')]
-        int    $numKeys = 0,
+        int $numKeys = 0,
         #[Schema(description: '参数列表')]
-        array  $args = [],
+        array $args = [],
     ): array
     {
         $this->checkInstallRedis();
         try {
-            // 获取Redis实例
-            $redis = RedisInstance::connection($connection);
-
-            // 执行Lua脚本
-            $result = $redis->eval($script, $args, $numKeys);
-
             return [
-                'success' => true,
-                'result' => $result,
+                'result' => RedisInstance::connection($connection)->eval($script, $numKeys, ...$args),
             ];
         } catch (Throwable $e) {
             throw new ToolCallException('执行Lua脚本失败: ' . $e->getMessage());
         }
     }
 
-    #[McpTool(name: 'redis_execute_lua_sha', description: '执行缓存在redis中的Lua脚本的哈希值执行Redis Lua脚本')]
+    #[McpTool(name: 'redis_execute_lua_sha', description: '使用sha1执行Redis Lua脚本')]
     public function executeLuaSha(
-        #[Schema(description: 'SHA1哈希值')]
-        string $sha,
+        #[Schema(description: 'Lua脚本内容')]
+        string $script,
         #[Schema(description: 'Redis连接名称')]
         string $connection = 'default',
         #[Schema(description: '键数量')]
-        int    $numKeys = 0,
+        int $numKeys = 0,
         #[Schema(description: '参数列表')]
-        array  $args = [],
+        array $args = [],
     ): array
     {
         $this->checkInstallRedis();
         try {
-            $redis = RedisInstance::connection($connection);
-
-            $result = $redis->evalsha($sha, $args, $numKeys);
-
             return [
                 'success' => true,
-                'result' => $result,
+                'result' => RedisInstance::connection($connection)->evalsha($script, $numKeys, ...$args),
             ];
         } catch (Throwable $e) {
             throw new ToolCallException('执行Lua脚本SHA失败: ' . $e->getMessage());
