@@ -44,7 +44,7 @@ enum McpClientRegisterEnum: string
 
     public function getPath(): string
     {
-        $path = preg_replace_callback('/%?([^%]+)%?/', fn($matches) => getenv($matches[1]) ?: $matches[0], $this->value);
+        $path = preg_replace_callback('/%?([^%]+)%?/', fn ($matches) => getenv($matches[1]) ?: $matches[0], $this->value);
         if (str_starts_with($path, './')) {
             $path = base_path(substr($path, 2));
         }

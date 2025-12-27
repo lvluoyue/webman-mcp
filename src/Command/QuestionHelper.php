@@ -6,14 +6,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use UnitEnum;
 
 /**
- * 问题处理助手类
+ * 问题处理助手类.
  *
  * @template T
  */
 final class QuestionHelper
 {
     /**
-     * 处理问题交互并获取用户输入
+     * 处理问题交互并获取用户输入.
      *
      * @param array<T, array{question: string, regex: string, default?: mixed, validator?: callable, choice?: array|class-string<UnitEnum>}> $questions 问题配置数组
      * @param SymfonyStyle $style Symfony控制台样式
@@ -37,7 +37,7 @@ final class QuestionHelper
                     $choiceList = $question['choice'];
                     $is_enum = false;
                     if (is_string($question['choice']) && is_subclass_of($question['choice'], UnitEnum::class)) {
-                        $choiceList = array_map(fn($case) => $case->value, $question['choice']::cases());
+                        $choiceList = array_map(fn ($case) => $case->value, $question['choice']::cases());
                         $is_enum = true;
                     }
                     $answer = $style->choice(

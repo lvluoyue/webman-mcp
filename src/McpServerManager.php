@@ -16,6 +16,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use function request;
 use support\Cache;
 use support\Container;
 use support\Context;
@@ -26,10 +27,11 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Coroutine;
 use Workerman\Timer;
 use Workerman\Worker;
-use function request;
 
 final class McpServerManager
 {
+    public const PLUGIN_REWFIX = 'plugin.luoyue.webman-mcp.';
+
     public static bool $isInit = false;
 
     private static array $config;
@@ -39,8 +41,6 @@ final class McpServerManager
 
     /** @var WeakMap<TransportInterface, int> */
     private static WeakMap $transports;
-
-    public const PLUGIN_REWFIX = 'plugin.luoyue.webman-mcp.';
 
     public function __construct()
     {
@@ -164,14 +164,12 @@ final class McpServerManager
     {
         if ($body instanceof CallbackStream) {
             $context = clone Context::get();
-            $callback = function () use ($body, $context) {
+            McpHelper::coroutine_defer(function () use ($body, $context) {
                 Context::reset($context);
                 return $body->getContents();
-            };
-            Coroutine::isCoroutine() ? Coroutine::defer($callback) : Timer::delay(0.000001, $callback);
+            });
             return "\r\n";
         }
         return $body->getContents();
     }
-
 }

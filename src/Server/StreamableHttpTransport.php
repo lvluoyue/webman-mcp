@@ -3,6 +3,7 @@
 namespace Luoyue\WebmanMcp\Server;
 
 use Http\Discovery\Psr17FactoryDiscovery;
+use const JSON_THROW_ON_ERROR;
 use JsonException;
 use Mcp\Schema\JsonRpc\Error;
 use Mcp\Server\Transport\CallbackStream;
@@ -16,24 +17,21 @@ use Symfony\Component\Uid\Uuid;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\ServerSentEvents;
 use Workerman\Timer;
-use const JSON_THROW_ON_ERROR;
 
 class StreamableHttpTransport extends BaseStreamableHttpTransport
 {
-
     private readonly TcpConnection $connection;
 
     /**
      * @param array<string, string> $corsHeaders
      */
     public function __construct(
-        readonly ServerRequestInterface   $request,
+        public readonly ServerRequestInterface $request,
         private ?ResponseFactoryInterface $responseFactory = null,
-        ?StreamFactoryInterface           $streamFactory = null,
-        array                             $corsHeaders = [],
-        ?LoggerInterface                  $logger = null,
-    )
-    {
+        ?StreamFactoryInterface $streamFactory = null,
+        array $corsHeaders = [],
+        ?LoggerInterface $logger = null,
+    ) {
         $this->connection = $request->getAttribute(TcpConnection::class);
         $this->responseFactory = $responseFactory ?? Psr17FactoryDiscovery::findResponseFactory();
         parent::__construct($request, $responseFactory, $streamFactory, $corsHeaders, $logger);
@@ -136,5 +134,4 @@ class StreamableHttpTransport extends BaseStreamableHttpTransport
             ]));
         }
     }
-
 }

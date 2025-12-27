@@ -14,7 +14,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('mcp:inspector', 'Start MCP inspector')]
 final class McpInspectorCommand extends Command
 {
-
     public function __invoke(InputInterface $input, OutputInterface $output, #[Argument('Service name')] ?string $service): int
     {
         $style = new SymfonyStyle($input, $output);
@@ -52,13 +51,13 @@ final class McpInspectorCommand extends Command
     private function findExecutable(string $name): ?string
     {
         // Try which command first (Unix/Linux/macOS)
-        $which = trim((string)shell_exec(sprintf('which %s 2>/dev/null', escapeshellarg($name))));
+        $which = trim((string) shell_exec(sprintf('which %s 2>/dev/null', escapeshellarg($name))));
         if ($which !== '' && is_executable($which)) {
             return $which;
         }
 
         // Try where command (Windows)
-        $where = trim((string)shell_exec(sprintf('where %s 2>nul', escapeshellarg($name))));
+        $where = trim((string) shell_exec(sprintf('where %s 2>nul', escapeshellarg($name))));
 
         if ($where !== '') {
             $paths = explode("\n", $where);

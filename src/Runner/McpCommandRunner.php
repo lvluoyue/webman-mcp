@@ -9,7 +9,7 @@ use Luoyue\WebmanMcp\Command\McpStdioCommand;
 
 final class McpCommandRunner implements McpRunnerInterface
 {
-    const COMMAND = [
+    public const COMMAND = [
         McpStdioCommand::class,
         McpListCommand::class,
         McpMakeCommand::class,
