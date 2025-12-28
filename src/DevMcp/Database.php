@@ -24,6 +24,7 @@ class Database
                     'driver' => $connection['driver'] ?? null,
                     'database' => $connection['database'] ?? null,
                     'prefix' => $connection['prefix'] ?? null,
+                    'schema' => $connection['schema'] ?? null,
                     'pool' => $connection['pool'] ?? [],
                 ];
             }, array_keys($connections), array_values($connections)),
@@ -31,17 +32,19 @@ class Database
     }
 
     #[McpTool(name: 'database_execute_sql', description: '执行原始sql脚本')]
-    public function database_execute_sql(
+    public function databaseExecuteSql(
         #[Schema(description: 'sql脚本')]
-        string  $sql,
+        string $sql,
+        #[Schema(description: 'sql参数绑定')]
+        array $bindings,
         #[Schema(description: 'database连接名称')]
-        ?string $connection = 'default',
+        ?string $connection = null,
     ): array
     {
         $this->checkInstallDatabase();
         try {
             return [
-                'result' => Db::connection($connection)->raw($sql),
+                'result' => array_map(fn ($item) => (array) $item, Db::connection($connection)->select($sql, $bindings)),
             ];
         } catch (Throwable $e) {
             throw new ToolCallException('执行sql失败: ' . $e->getMessage());

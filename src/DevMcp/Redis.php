@@ -35,10 +35,13 @@ class Redis
         array $parameters,
         #[Schema(description: 'Redis连接名称')]
         ?string $connection = 'default',
+        #[Schema(description: 'Redis数据库编号')]
+        int $database = 0,
     ): array
     {
         $this->checkInstallRedis();
         try {
+            RedisInstance::connection($connection)->select($database);
             return [
                 'success' => true,
                 'result' => RedisInstance::connection($connection)->executeRaw($parameters),
@@ -54,6 +57,8 @@ class Redis
         string $script,
         #[Schema(description: 'Redis连接名称')]
         ?string $connection = 'default',
+        #[Schema(description: 'Redis数据库编号')]
+        int $database = 0,
         #[Schema(description: '键数量')]
         int $numKeys = 0,
         #[Schema(description: '参数列表')]
@@ -62,6 +67,7 @@ class Redis
     {
         $this->checkInstallRedis();
         try {
+            RedisInstance::connection($connection)->select($database);
             return [
                 'result' => RedisInstance::connection($connection)->eval($script, $numKeys, ...$args),
             ];
@@ -76,7 +82,8 @@ class Redis
         string $script,
         #[Schema(description: 'Redis连接名称')]
         ?string $connection = 'default',
-        #[Schema(description: '键数量')]
+        #[Schema(description: 'Redis数据库编号')]
+        int $database = 0,
         int $numKeys = 0,
         #[Schema(description: '参数列表')]
         array $args = [],
@@ -84,6 +91,7 @@ class Redis
     {
         $this->checkInstallRedis();
         try {
+            RedisInstance::connection($connection)->select($database);
             return [
                 'success' => true,
                 'result' => RedisInstance::connection($connection)->evalsha($script, $numKeys, ...$args),

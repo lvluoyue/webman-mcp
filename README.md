@@ -4,9 +4,7 @@
 
 这是一个Webman框架与官方MCP PHP SDK深度集成的插件，并在SDK基础上进行了扩展，可快速创建MCP服务器。
 
-> 此插件依赖于官方的[MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk)，我们正在努力完善与SDK的兼容性。
-
-> SDK文档与此插件无较大语法差异，所以文档仅展示插件功能和sdk的差异。
+> 此插件依赖于官方的[MCP PHP SDK](https://github.com/modelcontextprotocol/php-sdk)，以下文档仅展示插件与sdk的差异。
 
 ## 特性
 
@@ -117,29 +115,28 @@ php webman mcp:list
 
 ### MCP开发工具
 
-|      类别       |          名称           | 描述                                 |
-|:-------------:|:---------------------:|:-----------------------------------|
-|     tool      |  sequential_thinking  | 让ai进入深度思考                          |
-|     tool      |      system_info      | 获取webman框架信息，php版本信息，系统信息，是否使用协程   |
-| tool/resource |      get_config       | 获取config配置信息                       |
-| tool/resource |        get_env        | 获取env环境变量信息                        |
-|     tool      |     list_process      | 获取进程列表                             |
-|     tool      |      list_routes      | 获取路由列表                             |
-|     tool      |     match_routes      | 匹配url对应的路由信息                       |
-|     tool      |    list_dependence    | 获取项目依赖列表                           |
-|     tool      |    list_extensions    | 获取当前环境已加载的php扩展                    |
-|     tool      |  get_extension_funcs  | 获取扩展已加载的函数                         |
-|     tool      |      list_events      | 获取事件列表                             |
-|     tool      |       eval_code       | 执行php代码                            |
-|     tool      |      build_phar       | 将项目代码打包为phar文件                     |
-|     tool      |       build_bin       | 将项目代码打包为linux二进制可执行文件              |
-|     tool      | database_connections  | 获取数据库连接配置信息列表                      |
-|     tool      |    database_schema    | 获取表的详细模式信息（查看所有表，检查列、约束、索引，理解外键关系） |
-|     tool      | database_execute_sql  | 执行原始sql脚本                          |
-|     tool      |   redis_connections   | 获取数据库redis配置信息列表                   |
-|     tool      |   redis_execute_raw   | 执行原始Redis命令                        |
-|     tool      |   redis_execute_lua   | 执行Redis Lua脚本                      |
-|     tool      | redis_execute_lua_sha | 使用sha1执行Redis Lua脚本                |
+|  类别  |          名称           | 描述                               |
+|:----:|:---------------------:|:---------------------------------|
+| tool |  sequential_thinking  | 让ai进入深度思考                        |
+| tool |      system_info      | 获取webman框架信息，php版本信息，系统信息，是否使用协程 |
+| tool |      get_config       | 获取config配置信息                     |
+| tool |        get_env        | 获取env环境变量信息                      |
+| tool |     list_process      | 获取进程列表                           |
+| tool |      list_routes      | 获取路由列表                           |
+| tool |     match_routes      | 匹配url对应的路由信息                     |
+| tool |    list_dependence    | 获取项目依赖列表                         |
+| tool |    list_extensions    | 获取当前环境已加载的php扩展                  |
+| tool |  get_extension_funcs  | 获取扩展已加载的函数                       |
+| tool |      list_events      | 获取事件列表                           |
+| tool |       eval_code       | 执行php代码                          |
+| tool |      build_phar       | 将项目代码打包为phar文件                   |
+| tool |       build_bin       | 将项目代码打包为linux二进制可执行文件            |
+| tool | database_connections  | 获取数据库连接配置信息列表                    |
+| tool | database_execute_sql  | 执行原始sql脚本                        |
+| tool |   redis_connections   | 获取数据库redis配置信息列表                 |
+| tool |   redis_execute_raw   | 执行原始Redis命令                      |
+| tool |   redis_execute_lua   | 执行Redis Lua脚本                    |
+| tool | redis_execute_lua_sha | 使用sha1执行Redis Lua脚本              |
 
 ## 日志记录
 
@@ -218,20 +215,13 @@ return [
 
 ### McpTool注解如何将Controller结合使用
 
-由于webman控制器和mcp消息处理机制差异，无法完美兼容，需要稍加改动即可适配。具体操作如下：
-
-1. mcp执行`controller`行为与配置`app.controller_reuse=true`相同，实例化后放入容器中复用。
-2. 无法使用webman^2.1的参数绑定和Request注入，orm注入等，但可使用助手函数`request()`和`response()`获取请求响应对象。
-3. 判断是否是mcp执行环境可使用`Context::get('McpServerRequest', false);`返回true时为mcp环境。
-4. 可根据第三条方法为不同的环境返回不同的响应。
-
-示例：
+由于webman控制器和mcp消息处理机制差异，无法完美兼容，需要稍加改动即可适配。具体代码如下：
 
 ```php
 <?php
 
-use support\Context;
 use Mcp\Server\RequestContext;
+use Luoyue\WebmanMcp\McpHelper;
 use Workerman\Protocols\Http\Response;
 
 class McpController
@@ -240,6 +230,7 @@ class McpController
     /**
      * tool示例代码
      *
+     * @param RequestContext|null $context MCP请求上下文，设置为可选适配controller
      * @return array 返回包含会话ID的状态信息
      */
     #[McpTool(name: 'example_tool')]
@@ -249,11 +240,9 @@ class McpController
             'status' => 'ok',
             'params' => request()->all(),
         ];
+        // controller将自动忽略此行代码
         $context?->getClientLogger()->info('example_tool', $result);
-        if (Context::get('McpServerRequest'), false) {
-            return  $result;
-        }
-        return response($result);
+        return McpHelper::is_mcp_server_request() ? $result : response($result);
     }
 }
 ```
