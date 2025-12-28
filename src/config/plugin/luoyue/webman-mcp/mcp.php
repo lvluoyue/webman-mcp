@@ -39,7 +39,7 @@ return [
                 resourcesListChanged: false,
                 prompts: true,
                 promptsListChanged: false,
-                logging: false,
+                logging: true,
                 completions: true,
                 experimental: null,
             ));
