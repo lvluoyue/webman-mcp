@@ -15,14 +15,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand('mcp:make', 'Create MCP service or template')]
 final class McpMakeCommand extends Command
 {
-
     public function __invoke(
-        InputInterface  $input,
+        InputInterface $input,
         OutputInterface $output,
         #[Argument('type name', suggestedValues: ['config', 'template'])]
-        string          $type
-    ): int
-    {
+        string $type,
+    ): int {
         $style = new SymfonyStyle($input, $output);
         switch ($type) {
             case 'config':
@@ -51,12 +49,12 @@ final class McpMakeCommand extends Command
                     }
                     $style->error('Service name already exists. Please choose another one.');
                     return false;
-                }
+                },
             ],
             'version' => [
                 'question' => 'Please enter version',
                 'default' => '1.0.0',
-                'regex' => '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/'
+                'regex' => '/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/',
             ],
             'protocol_version' => [
                 'question' => 'Please choice protocol version',
@@ -66,17 +64,17 @@ final class McpMakeCommand extends Command
             'description' => [
                 'question' => 'Please enter description',
                 'default' => 'MCP Service description',
-                'regex' => '/^.*$/'
+                'regex' => '/^.*$/',
             ],
             'instructions' => [
                 'question' => 'Please enter instructions',
                 'default' => 'MCP Service instructions',
-                'regex' => '/^.*$/'
+                'regex' => '/^.*$/',
             ],
             'pagination_limit' => [
                 'question' => 'Please enter pagination limit',
                 'default' => 50,
-                'regex' => '/^[1-9][0-9]*$/'
+                'regex' => '/^[1-9][0-9]*$/',
             ],
             'logger' => [
                 'question' => 'Please choice logger',
@@ -112,6 +110,8 @@ final class McpMakeCommand extends Command
                         completions: true,
                         experimental: null,
                     ));
+                    // 添加开发环境工具，仅debug模式下启用
+                    config('app.debug') && \$server->addLoader(new DevelopmentMcpLoader);
                 },
                 // 服务日志，对应插件下的log配置文件
                 'logger' => '{$questions['logger']}',
@@ -165,7 +165,7 @@ final class McpMakeCommand extends Command
 
         $returnPos = strrpos($content, '];');
         if ($returnPos === false) {
-            $style->error("Invalid configuration file format: missing closing bracket");
+            $style->error('Invalid configuration file format: missing closing bracket');
             return Command::FAILURE;
         }
 
@@ -197,13 +197,13 @@ final class McpMakeCommand extends Command
             'file_name' => [
                 'question' => 'Please enter file name',
                 'default' => 'example',
-                'regex' => '/^[a-z_][a-z0-9_.-]*(\/[a-z0-9_.-]+)*$/i'
+                'regex' => '/^[a-z_][a-z0-9_.-]*(\/[a-z0-9_.-]+)*$/i',
             ],
             'generator_type' => [
                 'question' => 'Please enter generator type',
                 'multi_select' => true,
                 'choice' => ['mcp-tool', 'mcp-resource', 'mcp-resource-template', 'mcp-prompt'],
-            ]
+            ],
         ];
 
         $questions = QuestionHelper::handleQuestions($questions, $style);
@@ -212,30 +212,30 @@ final class McpMakeCommand extends Command
             'save_dir' => [
                 'question' => 'Please enter save dir',
                 'choice' => $config['discover']['scan_dirs'],
-                'default' => $config['discover']['scan_dirs'][0] ?? null
-            ]
+                'default' => $config['discover']['scan_dirs'][0] ?? null,
+            ],
         ], $style);
 
         $templates = [
-            'mcp-tool' => <<<MCP_TOOL
+            'mcp-tool' => <<<'MCP_TOOL'
                 /**
                  * tool示例代码
                  *
-                 * @param ClientGateway \$client 客户端网关实例
-                 * @param Session \$_session 会话实例
+                 * @param ClientGateway $client 客户端网关实例
+                 * @param Session $_session 会话实例
                  * @return array 返回包含会话ID的状态信息
                  */
                 #[McpTool(name: 'example_tool')]
-                public function exampleTool(ClientGateway \$client): array
+                public function exampleTool(ClientGateway $client): array
                 {
-                    \$client->log(LoggingLevel::Debug, 'example_tool called');
+                    $client->log(LoggingLevel::Debug, 'example_tool called');
                     return [
                         'status' => 'ok',
                         'result' => 'hello world'
                     ];
                 }
             MCP_TOOL,
-            'mcp-resource' => <<<MCP_RESOURCE
+            'mcp-resource' => <<<'MCP_RESOURCE'
                 /**
                  * resource示例代码
                  *
@@ -250,58 +250,58 @@ final class McpMakeCommand extends Command
                     ];
                 }
             MCP_RESOURCE,
-            'mcp-resource-template' => <<<MCP_RESOURCE_TEMPLATE
+            'mcp-resource-template' => <<<'MCP_RESOURCE_TEMPLATE'
                 /**
                  * resource template示例代码
                  *
-                 * @param ClientGateway \$client 客户端网关实例
-                 * @param Session \$_session 会话实例
+                 * @param ClientGateway $client 客户端网关实例
+                 * @param Session $_session 会话实例
                  * @return array 返回包含会话ID的状态信息
                  */
                 #[McpResourceTemplate(uriTemplate: 'user://{userId}/profile')]
                 public function exampleResourceTemplate(
                     #[CompletionProvider(values: ['101', '102', '103'])]
-                    string \$userId
+                    string $userId
                 ): array
                 {
-                    \$uesrs =  [
+                    $uesrs =  [
                         '101' => ['name' => 'Alice', 'email' => 'alice@example.com', 'role' => 'admin'],
                         '102' => ['name' => 'Bob', 'email' => 'bob@example.com', 'role' => 'user'],
                         '103' => ['name' => 'Charlie', 'email' => 'charlie@example.com', 'role' => 'user'],
                     ];
-                    if (!isset(\$users[\$userId])) {
-                        throw new ResourceReadException("User not found for ID: {\$userId}");
+                    if (!isset($users[$userId])) {
+                        throw new ResourceReadException("User not found for ID: {$userId}");
                     }
             
-                    return \$users[\$userId];
+                    return $users[$userId];
                 }
             MCP_RESOURCE_TEMPLATE,
-            'mcp-prompt' => <<<MCP_PROMPT
+            'mcp-prompt' => <<<'MCP_PROMPT'
                 /**
                  * prompt示例代码
                  *
-                 * @param ClientGateway \$client 客户端网关实例
-                 * @param Session \$_session 会话实例
+                 * @param ClientGateway $client 客户端网关实例
+                 * @param Session $_session 会话实例
                  * @return array 返回包含会话ID的状态信息
                  */
                 #[McpPrompt(name: 'example_prompt')]
                 public function generateBio(
                     #[CompletionProvider(provider: UserIdCompletionProvider::class)]
-                    string \$userId,
-                    string \$tone = 'professional',
+                    string $userId,
+                    string $tone = 'professional',
                 ): array {
-                    \$uesrs =  [
+                    $uesrs =  [
                         '101' => ['name' => 'Alice', 'email' => 'alice@example.com', 'role' => 'admin'],
                         '102' => ['name' => 'Bob', 'email' => 'bob@example.com', 'role' => 'user'],
                         '103' => ['name' => 'Charlie', 'email' => 'charlie@example.com', 'role' => 'user'],
                     ];
-                    if (!isset(\$users[\$userId])) {
-                        throw new PromptGetException("User not found for bio prompt: {\$userId}");
+                    if (!isset($users[$userId])) {
+                        throw new PromptGetException("User not found for bio prompt: {$userId}");
                     }
-                    \$user = \$users[\$userId];
+                    $user = $users[$userId];
             
                     return [
-                        ['role' => 'user', 'content' => "Write a short, {\$tone} biography for {\$user['name']} (Role: {\$user['role']}, Email: {\$user['email']}). Highlight their role within the system."],
+                        ['role' => 'user', 'content' => "Write a short, {$tone} biography for {$user['name']} (Role: {$user['role']}, Email: {$user['email']}). Highlight their role within the system."],
                     ];
                 }
             MCP_PROMPT,
@@ -314,10 +314,10 @@ final class McpMakeCommand extends Command
             'mcp-prompt' => 'use Mcp\Capability\Attribute\McpPrompt;',
         ];
 
-        $example = array_filter($templates, fn($type) => in_array($type, $questions['generator_type']), ARRAY_FILTER_USE_KEY);
+        $example = array_filter($templates, fn ($type) => in_array($type, $questions['generator_type']), ARRAY_FILTER_USE_KEY);
         $example = implode(PHP_EOL, $example);
 
-        $useClass = array_filter($useClass, fn($type) => in_array($type, $questions['generator_type']), ARRAY_FILTER_USE_KEY);
+        $useClass = array_filter($useClass, fn ($type) => in_array($type, $questions['generator_type']), ARRAY_FILTER_USE_KEY);
         $useClass = implode(PHP_EOL, $useClass);
 
         $namespace = str_replace('/', '\\', $questions['save_dir']);

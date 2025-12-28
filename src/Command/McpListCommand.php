@@ -12,7 +12,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand('mcp:list', 'List all MCP service')]
 final class McpListCommand extends Command
 {
-
     public function __invoke(OutputInterface $output): int
     {
         $table = new Table($output);

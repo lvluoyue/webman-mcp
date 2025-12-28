@@ -17,10 +17,9 @@ final class McpRouterRunner implements McpRunnerInterface
             $config = $mcpServerManager->getServiceConfig($name);
             $httpConfig = $config['transport']['streamable_http'];
             if ($httpConfig['router']['enable'] ?? false) {
-                $routes[] = Route::any($httpConfig['endpoint'], fn() => $mcpServerManager->start($name));
+                $routes[] = Route::any($httpConfig['endpoint'], fn () => $mcpServerManager->start($name));
             }
         }
         return $routes;
     }
-
 }
