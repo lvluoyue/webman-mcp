@@ -24,9 +24,6 @@ use support\Log;
 use WeakMap;
 use Webman\Http\Response;
 use Workerman\Connection\TcpConnection;
-use Workerman\Coroutine;
-use Workerman\Timer;
-use Workerman\Worker;
 
 final class McpServerManager
 {
@@ -119,7 +116,7 @@ final class McpServerManager
         }
         $server = self::$server[$serviceName];
 
-        return Worker::getAllWorkers() ? $this->handleHttpRequest($server, $serviceName) : $this->handleStdioMessage($server, $serviceName);
+        return isset($_ENV['SHELL_VERBOSITY']) ? $this->handleStdioMessage($server, $serviceName) : $this->handleHttpRequest($server, $serviceName);
     }
 
     private function handleStdioMessage(Server $server, string $serviceName)
@@ -140,6 +137,7 @@ final class McpServerManager
         $config = $this->getServiceConfig($serviceName);
         $headers = $config['transport']['streamable_http']['headers'] ?? [];
 
+        request()->plugin = 'luoyue.webman-mcp';
         $request = new ServerRequest(
             request()->method(),
             request()->uri(),

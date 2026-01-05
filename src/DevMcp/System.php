@@ -196,11 +196,10 @@ class System
         ob_start();
         try {
             eval($code);
-            $output = ob_get_contents();
+            return ob_get_contents();
         } finally {
-            ob_end_clean(); // 确保无论是否出错都会清理缓冲区
+            ob_end_clean();
         }
-        return $output;
     }
 
     #[McpTool(name: 'build_phar', description: '将项目代码打包为phar文件')]

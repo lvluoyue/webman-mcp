@@ -25,13 +25,13 @@ class DevelopmentMcpLoader implements LoaderInterface
             $registry->registerTool($tool->tool, $tool->handler, true);
         }
         foreach ($state->getPrompts() as $prompt) {
-            $registry->registerPrompt($prompt->prompt, $prompt->handler, true);
+            $registry->registerPrompt($prompt->prompt, $prompt->handler, $prompt->completionProviders, true);
         }
         foreach ($state->getResources() as $resource) {
             $registry->registerResource($resource->resource, $resource->handler, true);
         }
         foreach ($state->getResourceTemplates() as $resource) {
-            $registry->registerResourceTemplate($resource->resourceTemplate, $resource->handler, true);
+            $registry->registerResourceTemplate($resource->resourceTemplate, $resource->handler, $resource->completionProviders, true);
         }
     }
 }

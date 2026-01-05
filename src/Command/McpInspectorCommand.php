@@ -28,7 +28,7 @@ final class McpInspectorCommand extends Command
                 ],
             ], $style)['service'];
         }
-        $npxPath = $this->findExecutable('npx');
+        $npxPath = $this->findExecutable(DIRECTORY_SEPARATOR === '\\' ? 'npx.cmd' : 'npx');
         if ($npxPath === null) {
             $style->error('npx not found. Please install Node.js to use the MCP Inspector.');
             $style->writeln('Visit: https://nodejs.org/');
@@ -37,7 +37,7 @@ final class McpInspectorCommand extends Command
         }
 
         $command = sprintf(
-            '%s @modelcontextprotocol/inspector %s',
+            '%s -y @modelcontextprotocol/inspector %s',
             escapeshellarg($npxPath),
             base_path('webman') . ' mcp:server ' . $service,
         );
@@ -50,21 +50,21 @@ final class McpInspectorCommand extends Command
 
     private function findExecutable(string $name): ?string
     {
+        $nullDevice = DIRECTORY_SEPARATOR === '\\' ? 'nul' : '/dev/null';
+
         // Try which command first (Unix/Linux/macOS)
-        $which = trim((string) shell_exec(sprintf('which %s 2>/dev/null', escapeshellarg($name))));
+        $which = trim((string) shell_exec(sprintf('which %s 2>%s', escapeshellarg($name), $nullDevice)));
         if ($which !== '' && is_executable($which)) {
             return $which;
         }
 
         // Try where command (Windows)
-        $where = trim((string) shell_exec(sprintf('where %s 2>nul', escapeshellarg($name))));
-
+        $where = trim((string) shell_exec(sprintf('where %s 2>%s', escapeshellarg($name), $nullDevice)));
         if ($where !== '') {
             $paths = explode("\n", $where);
-            foreach ($paths as $path) {
-                if ($path !== '' && pathinfo(trim($path, PATHINFO_EXTENSION) == 'cmd')) {
-                    return $path;
-                }
+            $firstPath = trim($paths[0]);
+            if ($firstPath !== '' && (is_executable($firstPath) || DIRECTORY_SEPARATOR === '\\')) {
+                return $firstPath;
             }
         }
 
