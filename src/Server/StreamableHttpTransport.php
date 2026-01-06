@@ -5,14 +5,15 @@ namespace Luoyue\WebmanMcp\Server;
 use Http\Discovery\Psr17FactoryDiscovery;
 use const JSON_THROW_ON_ERROR;
 use JsonException;
+use Luoyue\WebmanMcp\McpHelper;
 use Mcp\Schema\JsonRpc\Error;
-use Mcp\Server\Transport\CallbackStream;
 use Mcp\Server\Transport\StreamableHttpTransport as BaseStreamableHttpTransport;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
+use support\Context;
 use Symfony\Component\Uid\Uuid;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\ServerSentEvents;
@@ -28,20 +29,24 @@ class StreamableHttpTransport extends BaseStreamableHttpTransport
     public function __construct(
         public readonly ServerRequestInterface $request,
         private ?ResponseFactoryInterface $responseFactory = null,
-        ?StreamFactoryInterface $streamFactory = null,
+        private ?StreamFactoryInterface $streamFactory = null,
         array $corsHeaders = [],
         ?LoggerInterface $logger = null,
     ) {
         $this->connection = $request->getAttribute(TcpConnection::class);
         $this->responseFactory = $responseFactory ?? Psr17FactoryDiscovery::findResponseFactory();
+        $this->streamFactory = $streamFactory ?? Psr17FactoryDiscovery::findStreamFactory();
         parent::__construct($request, $responseFactory, $streamFactory, $corsHeaders, $logger);
     }
 
     protected function createStreamedResponse(): ResponseInterface
     {
-        $callback = function (): void {
+        $context = clone Context::get();
+        $callback = function (bool $loop = false) use (&$callback, $context): void {
             try {
-                $this->logger->info('SSE: Starting request processing loop');
+                Context::reset($context);
+
+                !$loop && $this->logger->info('SSE: Starting request processing loop');
 
                 while ($this->sessionFiber->isSuspended()) {
                     $this->flushOutgoingMessages($this->sessionId);
@@ -79,23 +84,24 @@ class StreamableHttpTransport extends BaseStreamableHttpTransport
                     }
 
                     if (!$resumed) {
-                        Timer::sleep(0.1);
+                        Timer::delay(0.1, $callback, [true]);
+                        return;
                     } // Prevent tight loop
                 }
 
                 $this->handleFiberTermination();
             } finally {
-                $this->sessionFiber = null;
+                isset($resumed) && $resumed && $this->sessionFiber = null;
             }
         };
 
-        $stream = new CallbackStream($callback, $this->logger);
+        McpHelper::coroutine_defer($callback);
         $response = $this->responseFactory->createResponse(200)
             ->withHeader('Content-Type', 'text/event-stream')
             ->withHeader('Cache-Control', 'no-cache')
             ->withHeader('Connection', 'keep-alive')
             ->withHeader('X-Accel-Buffering', 'no')
-            ->withBody($stream);
+            ->withBody($this->streamFactory->createStream("\r\n"));
 
         if ($this->sessionId) {
             $response = $response->withHeader('Mcp-Session-Id', $this->sessionId->toRfc4122());
