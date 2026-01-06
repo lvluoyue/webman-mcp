@@ -155,19 +155,7 @@ final class McpServerManager
         /** @var ResponseInterface $response */
         $response = $server->run($transport);
 
-        return response($this->getResponseBody($response->getBody()), $response->getStatusCode(), array_map('current', $response->getHeaders()));
+        return response($response->getBody(), $response->getStatusCode(), array_map('current', $response->getHeaders()));
     }
 
-    private function getResponseBody(StreamInterface $body): string
-    {
-        if ($body instanceof CallbackStream) {
-            $context = clone Context::get();
-            McpHelper::coroutine_defer(function () use ($body, $context) {
-                Context::reset($context);
-                return $body->getContents();
-            });
-            return "\r\n";
-        }
-        return $body->getContents();
-    }
 }
