@@ -5,7 +5,7 @@
   "description": "Webman plugin luoyue/webman-mcp",
   "require": {
     "php": ">=8.1",
-    "mcp/sdk": "^0.7",
+    "mcp/sdk": "^0.8",
     "nyholm/psr7": "^1.8",
     "webman/console": "^2.1.12"
   },
@@ -42,7 +42,8 @@
     "cs:fix": "php-cs-fixer fix --verbose",
     "cs:check": "php-cs-fixer fix --dry-run --diff",
     "phpstan": "phpstan analyse --memory-limit=2G",
-    "phpstan-fix": "phpstan analyse --memory-limit=2G --fix"
+    "phpstan-fix": "phpstan analyse --memory-limit=2G --fix",
+    "conformance": "npx -y @modelcontextprotocol/conformance server --url http://127.0.0.1:8000/mcp --suite all"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,

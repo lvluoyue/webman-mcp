@@ -35,11 +35,12 @@ class StreamableHttpTransport extends BaseStreamableHttpTransport
         ?StreamFactoryInterface $streamFactory = null,
         ?LoggerInterface $logger = null,
         ?iterable $middleware = null,
+        int $maxBodyBytes = self::DEFAULT_MAX_BODY_BYTES,
     ) {
         $this->connection = $request->getAttribute(TcpConnection::class);
         $this->responseFactory = $responseFactory ?? Psr17FactoryDiscovery::findResponseFactory();
         $this->streamFactory = $streamFactory ?? Psr17FactoryDiscovery::findStreamFactory();
-        parent::__construct($request, $responseFactory, $streamFactory, $logger, $middleware);
+        parent::__construct($request, $responseFactory, $streamFactory, $logger, $middleware, $maxBodyBytes);
     }
 
     protected function createStreamedResponse(): ResponseInterface
